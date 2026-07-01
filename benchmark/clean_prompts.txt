@@ -1,0 +1,8 @@
+What's the default port for Redis?
+Should I use a monorepo or separate repos for three related services?
+MySQL or Postgres for a new analytics-heavy application?
+Is it worth adding a message queue just to send emails asynchronously?
+Name the four pillars of object-oriented programming and define each in one line.
+What are the first three database normal forms (1NF, 2NF, 3NF)? Define each.
+Explain how a hash map handles collisions.
+Explain the difference between a process and a thread.

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.DS_Store
+
+# local experiment captures, not for publishing
+benchmark/local/
+
+# benchmark result JSONs are regenerable; digested numbers live in the README
+benchmark/*results*.json
+benchmark/drift_*.json
+benchmark/ab_*.json
+benchmark/position_results_*.json
