@@ -50,7 +50,7 @@ Three harnesses, all headless (`claude -p`, subscription, no API key), prose-wor
 - `benchmark/drift_session.py "Default" "Say Less" [...]` — multi-turn persistence on the real output style (selected via `--settings outputStyle`); reports per-turn words, first vs second half drift, em-dash rate, and completeness. `--model opus` for the case that drifts.
 - `benchmark/position_test.py` — API-based placement test (rules in the system prompt vs re-injected each turn). Needs `ANTHROPIC_API_KEY`.
 
-`benchmark/RESEARCH.md` explains why the style is shaped the way it is, with sources. `benchmark/RESULTS.md` has the full experiment: the variant bake-off, the numbers behind the claims above, and the decision.
+`benchmark/RESEARCH.md` explains why the style is shaped the way it is, with sources. `benchmark/results/` holds one dated write-up per experiment round; [2026-07-drift-rebuild.md](benchmark/results/2026-07-drift-rebuild.md) is the bake-off behind the claims above.
 
 ## Status
 
