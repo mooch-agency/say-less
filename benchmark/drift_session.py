@@ -101,6 +101,112 @@ CONVERSATION = [
     {"kind": "fact",      "prompt": "What's the difference between let and const in JavaScript?"},
 ]
 
+# --- a SECOND session shape: longer (28 turns) and coding/debugging-heavy -----
+# The audit of the sl-v4/sl-v5 work flagged that ONE fixed 16-turn Q&A
+# conversation cannot prove a fix holds across session TYPE or LENGTH. This one
+# is ~75% longer and dominated by `grow` turns (pasted code, traces, diffs, a
+# long omnibus review) — the exact wall-of-text triggers that pull replies long
+# late in a real coding session. Kinds are balanced across the two halves so a
+# second-half rise is decay, not harder questions; checkable turns are spread at
+# 3/8/14/20/26 so --judge can track completeness early AND late. Prompts are
+# disjoint from CONVERSATION and from every style's few-shot examples.
+_BSEARCH = (
+    "def bsearch(a, target):\n"
+    "    lo, hi = 0, len(a)\n"
+    "    while lo <= hi:\n"
+    "        mid = (lo + hi) // 2\n"
+    "        if a[mid] == target: return mid\n"
+    "        if a[mid] < target: lo = mid + 1\n"
+    "        else: hi = mid - 1\n"
+    "    return -1\n"
+)
+_TRACE2 = (
+    "TypeError: Cannot read properties of undefined (reading 'map')\n"
+    "    at renderList (app.js:88:24)\n"
+    "    at Object.render (app.js:120:5)\n"
+    "    at commitRoot (react-dom.js:4201:3)\n"
+)
+_SLOWSQL = (
+    "-- runs once per user in a loop over 5k users\n"
+    "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC;\n"
+    "-- orders has 40M rows, no index on user_id\n"
+)
+_DIFF2 = (
+    "@@ async function sync(users):\n"
+    "-    for u in users:\n"
+    "-        await save(u)\n"
+    "+    for u in users:\n"
+    "+        save(u)   # dropped the await to 'speed it up'\n"
+    "+    return 'done'\n"
+)
+_RACE = (
+    "var counter int\n"
+    "for i := 0; i < 1000; i++ {\n"
+    "    go func() { counter++ }()\n"
+    "}\n"
+    "time.Sleep(time.Second)\n"
+    "fmt.Println(counter)\n"
+)
+_REGEX = r"^(\d{4})-(\d{2})-(\d{2})$  # meant to validate a date like 2026-13-45"
+_DOCKER = (
+    "FROM node:20\n"
+    "COPY . .\n"
+    "RUN npm install\n"
+    "CMD [\"node\", \"server.js\"]\n"
+)
+_MODULE = (
+    "class RateLimiter:\n"
+    "    def __init__(self, limit):\n"
+    "        self.limit = limit\n"
+    "        self.hits = {}\n"
+    "    def allow(self, key):\n"
+    "        now = time.time()\n"
+    "        self.hits.setdefault(key, [])\n"
+    "        self.hits[key] = [t for t in self.hits[key] if now - t < 60]\n"
+    "        if len(self.hits[key]) < self.limit:\n"
+    "            self.hits[key].append(now)\n"
+    "            return True\n"
+    "        return False\n"
+)
+
+CONVERSATION_CODING = [
+    {"kind": "fact",      "prompt": "What port does PostgreSQL listen on by default?"},
+    {"kind": "grow",      "prompt": "Is this binary search correct? If not, what's the bug?\n\n" + _BSEARCH},
+    {"kind": "checkable", "prompt": "Name the five SOLID principles.",
+     "check": "single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion"},
+    {"kind": "explain",   "prompt": "Explain how a bloom filter works."},
+    {"kind": "decision",  "prompt": "Should business logic live in database stored procedures or the application layer?"},
+    {"kind": "grow",      "prompt": "What's throwing this and how do I fix it?\n\n" + _TRACE2},
+    {"kind": "fact",      "prompt": "What does the SQL HAVING clause do?"},
+    {"kind": "checkable", "prompt": "What are the four ACID properties? Define each in one line.",
+     "check": "atomicity, consistency, isolation, durability"},
+    {"kind": "grow",      "prompt": "This endpoint is slow. What's wrong and how would you fix it?\n\n" + _SLOWSQL},
+    {"kind": "explain",   "prompt": "Explain how git rebase differs from git merge."},
+    {"kind": "decision",  "prompt": "Is it worth introducing dependency injection in a small Flask app?"},
+    {"kind": "grow",      "prompt": "Review this diff.\n\n" + _DIFF2},
+    {"kind": "fact",      "prompt": "What HTTP status code means Too Many Requests?"},
+    {"kind": "checkable", "prompt": "List the four standard SQL isolation levels from weakest to strongest.",
+     "check": "read uncommitted, read committed, repeatable read, serializable"},
+    {"kind": "explain",   "prompt": "Explain how a debounce function works and when to use it."},
+    {"kind": "grow",      "prompt": "Is this Go code safe? What does it print and why?\n\n" + _RACE},
+    {"kind": "fact",      "prompt": "What does git cherry-pick do?"},
+    {"kind": "decision",  "prompt": "Cache this API response in Redis or in-process memory?"},
+    {"kind": "grow",      "prompt": "What's wrong with this regex for date validation?\n\n" + _REGEX},
+    {"kind": "checkable", "prompt": "Name the three pillars of observability.",
+     "check": "logs, metrics, traces"},
+    {"kind": "explain",   "prompt": "Explain the difference between optimistic and pessimistic locking."},
+    {"kind": "grow",      "prompt": "What's the caching mistake in this Dockerfile?\n\n" + _DOCKER},
+    {"kind": "fact",      "prompt": "What does a 502 Bad Gateway indicate?"},
+    {"kind": "decision",  "prompt": "Rewrite this legacy service or apply the strangler-fig pattern incrementally?"},
+    {"kind": "grow",      "prompt": "Review this module for correctness, thread-safety, and performance; give the top 3 fixes.\n\n" + _MODULE},
+    {"kind": "checkable", "prompt": "List the five HTTP status code classes (1xx to 5xx) and what each class means.",
+     "check": "1xx informational, 2xx success, 3xx redirection, 4xx client error, 5xx server error"},
+    {"kind": "explain",   "prompt": "Explain how the TLS handshake establishes a secure connection."},
+    {"kind": "fact",      "prompt": "What's the difference between == and is in Python?"},
+]
+
+CONVERSATIONS = {"default": CONVERSATION, "coding": CONVERSATION_CODING}
+
 # --- prose-aware counting + tic detectors (shared with the other harnesses) --
 
 _FENCED = re.compile(r"```.*?```", re.DOTALL)
@@ -178,11 +284,16 @@ def _env():
     return {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
 
 
-def claude_turn(prompt, style, model, cwd, resume=None):
+def claude_turn(prompt, style, model, cwd, resume=None, hook_script=None):
     """One headless turn. Returns (reply_text, session_id)."""
+    settings = {"outputStyle": style}
+    if hook_script:
+        # Recency re-injection: a UserPromptSubmit hook fires at the newest turn.
+        settings["hooks"] = {"UserPromptSubmit": [{"hooks": [
+            {"type": "command", "command": f'bash "{hook_script}"', "timeout": 5}]}]}
     cmd = [
         "claude", "-p", prompt,
-        "--settings", json.dumps({"outputStyle": style}),
+        "--settings", json.dumps(settings),
         "--model", model,
         "--mcp-config", '{"mcpServers":{}}', "--strict-mcp-config",
         "--output-format", "json",
@@ -228,15 +339,31 @@ def judge_completeness(question, answer, model, cwd):
     return last
 
 
-def run_session(style, model, do_judge):
-    """One full multi-turn conversation under a style. Returns per-turn scores."""
+def run_session(style, model, do_judge, conversation):
+    """One full multi-turn conversation under a style. Returns per-turn scores.
+
+    A style name ending in '+hook' runs the same output style PLUS the Say Less
+    recency re-injection hook (benchmark/hooks/say-less-gate.sh): it is copied
+    into the session's isolated temp cwd and wired in via --settings, so one
+    paired batch can compare style-alone vs style+hook under identical conditions.
+    """
+    hook = style.endswith("+hook")
+    real_style = style[:-len("+hook")] if hook else style
     # Isolated empty dir so the agent isn't tempted into tool use.
     with tempfile.TemporaryDirectory(prefix="drift_") as cwd:
+        hook_script = None
+        if hook:
+            hook_script = os.path.join(cwd, "say-less-gate.sh")
+            with open(os.path.join(HERE, "hooks", "say-less-gate.sh")) as src:
+                data = src.read()
+            with open(hook_script, "w") as dst:
+                dst.write(data)
+            os.chmod(hook_script, 0o755)
         sid = None
         turns = []
-        for i, step in enumerate(CONVERSATION):
-            reply, sid = claude_turn(step["prompt"], style, model, cwd,
-                                     resume=sid if i else None)
+        for i, step in enumerate(conversation):
+            reply, sid = claude_turn(step["prompt"], real_style, model, cwd,
+                                     resume=sid if i else None, hook_script=hook_script)
             s = score_reply(reply)
             s["kind"] = step["kind"]
             s["reply"] = reply  # kept for auditing judge scores / inspecting drift
@@ -260,10 +387,10 @@ def _slope(ys):
     return round(sum((xs[i] - mx) * (ys[i] - my) for i in range(n)) / denom, 2)
 
 
-def aggregate(results):
+def aggregate(results, conversation):
     """results: {style: [trial][turn] -> score}. Returns per-style summary."""
     summary = {}
-    n_turns = len(CONVERSATION)
+    n_turns = len(conversation)
     half = n_turns // 2
     for style, trials in results.items():
         words, ems, opens, closes = [], [], [], []
@@ -309,18 +436,22 @@ def main():
     ap.add_argument("--model", default="sonnet")
     ap.add_argument("--workers", type=int, default=6, help="Parallel sessions.")
     ap.add_argument("--judge", action="store_true", help="Score completeness on checkable turns.")
+    ap.add_argument("--conversation", choices=list(CONVERSATIONS), default="default",
+                    help="Which session shape: 'default' (16-turn mixed Q&A) or "
+                         "'coding' (28-turn coding/debugging-heavy; tests robustness to type+length).")
     ap.add_argument("--out", default=os.path.join(HERE, "drift_session_results.json"))
     args = ap.parse_args()
 
+    conversation = CONVERSATIONS[args.conversation]
     jobs = [(st, t) for st in args.styles for t in range(args.trials)]
     raw = {st: [None] * args.trials for st in args.styles}
     print(f"Running {len(jobs)} sessions "
-          f"({len(args.styles)} styles x {args.trials} trials x {len(CONVERSATION)} turns), "
-          f"model={args.model}, judge={args.judge}", flush=True)
+          f"({len(args.styles)} styles x {args.trials} trials x {len(conversation)} turns), "
+          f"model={args.model}, judge={args.judge}, conversation={args.conversation}", flush=True)
     print(f"styles: {', '.join(args.styles)}\n", flush=True)
 
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
-        futs = {ex.submit(run_session, st, args.model, args.judge): (st, t)
+        futs = {ex.submit(run_session, st, args.model, args.judge, conversation): (st, t)
                 for st, t in jobs}
         done = 0
         for fut in as_completed(futs):
@@ -329,10 +460,11 @@ def main():
             done += 1
             print(f"  {done}/{len(jobs)} done: {st} trial {t + 1}", flush=True)
 
-    summary = aggregate(raw)
+    summary = aggregate(raw, conversation)
     with open(args.out, "w") as f:
         json.dump({"model": args.model, "trials": args.trials,
-                   "conversation": [c["prompt"][:50] for c in CONVERSATION],
+                   "conversation_name": args.conversation,
+                   "conversation": [c["prompt"][:50] for c in conversation],
                    "summary": summary, "raw": raw}, f, indent=2)
 
     print("\n=== SUMMARY (words = prose per reply; lower = terser) ===")

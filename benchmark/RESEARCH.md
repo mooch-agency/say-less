@@ -16,6 +16,13 @@ replies. These are the levers that fight that decay, ranked by expected impact.
    to the output style instructions during the conversation"
    (code.claude.com/docs/en/output-styles). Implication: keep the **core
    directive to one short, quotable line** the reminder can reinforce.
+   **Update (round 2, results/2026-07-drift-persistence-hook.md): the built-in
+   reminder is too weak on Opus.** An explicit `UserPromptSubmit` hook that
+   re-injects a short, application-framed, anti-anchoring directive at the newest
+   user turn (benchmark/hooks/say-less-gate.sh) cut late-session prose words −26%,
+   the first→second-half drift gap −35%, the slope −32%, and em dashes to 0, with
+   completeness held. This is the load-bearing persistence lever, and it lives in
+   config, not the prompt.
 
 2. **Frame positively, not as prohibitions.** Anthropic, for verbosity
    specifically: "Positive examples ... tend to be more effective than negative
@@ -54,6 +61,11 @@ replies. These are the levers that fight that decay, ranked by expected impact.
    self-correction *degrades* output (Huang et al., ICLR 2024, arxiv
    2310.01798). A "cut restatements/hedges/openers" check may help; a vague
    "make sure that was concise" hurts and costs latency. Tested as v2.
+   **Update (round 2): the self-check lever is plateaued.** Two follow-ups that
+   sharpened it — sl-v4 (a declarative anti-anchoring line) and sl-v5 (a numbered
+   pass/fail checklist with a length-relative criterion) — both failed to beat
+   sl-v3's drift on Opus, and both regressed em dashes. Rewriting the static
+   prompt no longer moves drift; the remaining lever is re-injection (lever 1).
 
 ## What not to do
 
