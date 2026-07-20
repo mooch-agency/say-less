@@ -23,6 +23,12 @@ replies. These are the levers that fight that decay, ranked by expected impact.
    the first→second-half drift gap −35%, the slope −32%, and em dashes to 0, with
    completeness held. This is the load-bearing persistence lever, and it lives in
    config, not the prompt.
+   **Update (channel test, results/2026-07-channel-comparison.md): the delivery
+   channel is not a lever either.** The same Say Less text as an output style vs
+   as persona memory (CLAUDE.md / PERSONA.md) drifts identically on Opus (gap
+   14.2 vs 13.8, slope 1.80 vs 1.77, 5 paired trials). The built-in reminder
+   adds nothing over a once-injected CLAUDE.md, and claudeMd's hard "MUST
+   follow" framing adds nothing over the style's soft framing.
 
 2. **Frame positively, not as prohibitions.** Anthropic, for verbosity
    specifically: "Positive examples ... tend to be more effective than negative
@@ -66,6 +72,43 @@ replies. These are the levers that fight that decay, ranked by expected impact.
    pass/fail checklist with a length-relative criterion) — both failed to beat
    sl-v3's drift on Opus, and both regressed em dashes. Rewriting the static
    prompt no longer moves drift; the remaining lever is re-injection (lever 1).
+
+## Round 3 evidence (2026-07-19): the residual is scope, not wording
+
+Background sweep (Claude Code internals + 2025-26 literature) after the channel
+test came back null. What it established:
+
+- **Nothing static re-injects.** Output style and CLAUDE.md load once (both
+  survive compaction, neither re-fires mid-session); the built-in output-style
+  reminder is undocumented in detail and measured too weak (round 2). Hooks are
+  the only per-turn mechanism (code.claude.com/docs/en/memory.md,
+  /prompt-caching.md, /hooks).
+- **Verbosity is content selection.** YapBench (arxiv 2601.00624, 76 models):
+  dominant excess-length modes are vacuum-filling scope and formatting overhead,
+  i.e. extra points/sections chosen, not wordy sentences. Verbosity compensation
+  (arxiv 2411.07858): padding under uncertainty correlates with lower accuracy.
+- **Word-count budgets fail perceptually.** Models can't perceive their own
+  output length (LARFT arxiv 2603.19255; arxiv 2601.01768); a bare "N words max"
+  gets <30% strict compliance even on frontier models (arxiv 2508.13805).
+  Counting ITEMS (bullets, sections) is the reliable end of the spectrum.
+- **Re-injection is now triply supported.** ContextEcho (arxiv 2605.24279, real
+  3.7k-9.7k-turn Claude Code sessions): register drift survives compaction, one
+  recency anchor restores it. Drift No More (arxiv 2510.07777): reminders are a
+  restoring force toward a bounded equilibrium. When Attention Closes (arxiv
+  2605.12922): system-prompt tokens become attention-inaccessible as context
+  fills; a recency anchor moves the rule to a high-attention position.
+- **Second anti-self-imitation lever exists but isn't reachable from config:**
+  pruning the model's own prior replies (arxiv 2602.24287: 36% of turns fully
+  self-contained; conversational inertia, arxiv 2602.03664). Claude Code
+  exposes no history-pruning hook; the recency anchor remains the vehicle.
+- **Measurement gap:** drift_session.py is Q&A-shaped. The worst real-world
+  verbosity is task-REPORT turns (agentic "here's what I did"), which no current
+  harness measures. ContextEcho and Claude Code issue #65961 both point here.
+
+Implication: prompt wording, self-check, framing, and channel are all exhausted
+levers. The remaining lever is a **scope budget, stated structurally
+(countable elements, not words), re-injected at recency** — and a report-shaped
+benchmark to measure it.
 
 ## What not to do
 

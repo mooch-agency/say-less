@@ -49,6 +49,10 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Source of truth for the Say Less rule text. The persona condition injects this
+# same body via CLAUDE.md so the ONLY difference vs the output style is the
+# delivery channel, not the words.
+STYLE_FILE = os.path.join(HERE, "..", "say-less.md")
 
 # --- the conversation -------------------------------------------------------
 # kind: fact | decision | checkable | explain | grow  (grow = context-grower)
@@ -205,7 +209,194 @@ CONVERSATION_CODING = [
     {"kind": "fact",      "prompt": "What's the difference between == and is in Python?"},
 ]
 
-CONVERSATIONS = {"default": CONVERSATION, "coding": CONVERSATION_CODING}
+# --- a THIRD session shape: report-heavy (14 turns, real tool use) -----------
+# Round 3 (RESEARCH.md) found the worst real-world verbosity is task-REPORT
+# turns — the model does work, then narrates it — and neither Q&A shape above
+# measures that. Here 8 of 14 turns are small edit tasks in a seeded workspace
+# (the session runs with Read/Write/Edit allowed); the reply we score IS the
+# report. Report turns are balanced 4/4 across halves so a second-half rise is
+# decay; quick Q&A turns are interleaved to mirror real sessions. Prompts say
+# only what a user would say ("add X", "fix Y") — no "be brief", and no "report
+# what you did" (reporting is the default behavior under test).
+_WS_UTILS = (
+    "import re\n\n\n"
+    "def parse_date(s):\n"
+    "    # expects YYYY-MM-DD\n"
+    "    y, m, d = s.split(\"-\")\n"
+    "    return int(y), int(m), int(d)\n\n\n"
+    "def slugify(s):\n"
+    "    s = s.lower().strip()\n"
+    "    s = re.sub(r\"[^a-z0-9]\", \"-\", s)\n"
+    "    return s.strip(\"-\")\n"
+)
+_WS_SERVER = (
+    "import json\n"
+    "import os\n\n\n"
+    "def handle_request(method, path, body=None):\n"
+    "    if method == \"GET\" and path == \"/health\":\n"
+    "        return 200, json.dumps({\"ok\": True})\n"
+    "    if method == \"POST\" and path == \"/parse\":\n"
+    "        from utils import parse_date\n"
+    "        y, m, d = parse_date(body)\n"
+    "        return 200, json.dumps({\"y\": y, \"m\": m, \"d\": d})\n"
+    "    return 404, json.dumps({\"error\": \"not found\"})\n\n\n"
+    "def unused_helper():\n"
+    "    pass\n"
+)
+WORKSPACES = {"report": {"utils.py": _WS_UTILS, "server.py": _WS_SERVER}}
+
+CONVERSATION_REPORT = [
+    {"kind": "report",    "prompt": "Add input validation to parse_date in utils.py: raise ValueError with a clear message on malformed input."},
+    {"kind": "fact",      "prompt": "What does HTTP status 304 mean?"},
+    {"kind": "report",    "prompt": "slugify in utils.py leaves repeated hyphens in the output (e.g. 'a  b' -> 'a--b'). Fix it."},
+    {"kind": "checkable", "prompt": "Name the four git object types.",
+     "check": "blob, tree, commit, tag"},
+    {"kind": "report",    "prompt": "Add a chunks(lst, n) function to utils.py that yields successive n-sized chunks, with a docstring."},
+    {"kind": "explain",   "prompt": "Explain what makes an HTTP API endpoint idempotent."},
+    {"kind": "report",    "prompt": "Add logging to handle_request in server.py: log the method and path at INFO level."},
+    {"kind": "report",    "prompt": "Rename slugify's parameter s to text, updating every use in the repo."},
+    {"kind": "fact",      "prompt": "What flag makes grep case-insensitive?"},
+    {"kind": "report",    "prompt": "Create a README.md describing what utils.py provides."},
+    {"kind": "checkable", "prompt": "List the three main states a tracked file moves through in git (working -> repository).",
+     "check": "modified, staged, committed"},
+    {"kind": "report",    "prompt": "Remove the unused import and any dead code in server.py."},
+    {"kind": "decision",  "prompt": "Should I pin exact dependency versions in requirements.txt for a small internal tool like this?"},
+    {"kind": "report",    "prompt": "Review utils.py and fix the most important remaining issue."},
+]
+
+# --- a FOURTH shape: report2, HEAVY-RESULT tasks (16 turns, real edits) ------
+# Round 1 (report) came back null because single-file micro-edits gave Opus
+# nothing to over-report (~30-word replies with no fix applied). Round 2
+# (results/2026-07-scope-hook-report.md) seeds a 7-file app with real,
+# findable issues across security / perf / correctness / dead code / a doc
+# contradiction, and asks heavy-result tasks: audits, whole-repo reviews, a
+# status summary — the turns where the model chooses HOW MANY of its findings
+# to narrate. Two turns are completeness GUARDS: turn 10 ("list the top 5")
+# genuinely requires 5 items, so a scope budget that drops requested content
+# shows as a loss there, not a win. Score BOTH prose and total words
+# (analyze_drift --metric total_words): structured overhead is what prose_words
+# strips and exactly what over-reporting adds.
+_A_CONFIG = (
+    "import os\n\n"
+    "# TODO: move to env before prod\n"
+    'SECRET_KEY = "dev-secret-12345"\n'
+    "DEBUG = True\n"
+    'DB_PATH = "app.db"\n'
+    "MAX_LOGIN_ATTEMPTS = 5  # not enforced anywhere\n"
+)
+_A_AUTH = (
+    "import sqlite3\n"
+    "from config import DB_PATH\n\n\n"
+    "def find_user(username):\n"
+    "    conn = sqlite3.connect(DB_PATH)\n"
+    "    cur = conn.cursor()\n"
+    "    cur.execute(\"SELECT id, username, password FROM users \"\n"
+    "                \"WHERE username = '%s'\" % username)\n"
+    "    return cur.fetchone()\n\n\n"
+    "def login(username, password):\n"
+    "    user = find_user(username)\n"
+    "    if user is None:\n"
+    "        return False\n"
+    "    return user[2] == password\n"
+)
+_A_DB = (
+    "import sqlite3\n"
+    "from config import DB_PATH\n\n\n"
+    "def get_orders_for_users(user_ids):\n"
+    "    conn = sqlite3.connect(DB_PATH)\n"
+    "    cur = conn.cursor()\n"
+    "    results = {}\n"
+    "    for uid in user_ids:\n"
+    "        cur.execute(\"SELECT * FROM orders WHERE user_id = ?\", (uid,))\n"
+    "        results[uid] = cur.fetchall()\n"
+    "    return results\n\n\n"
+    "def total_revenue():\n"
+    "    conn = sqlite3.connect(DB_PATH)\n"
+    "    cur = conn.cursor()\n"
+    "    cur.execute(\"SELECT amount FROM orders\")\n"
+    "    total = 0\n"
+    "    for r in cur.fetchall():\n"
+    "        total += r[0]\n"
+    "    return total\n"
+)
+_A_UTILS = (
+    "def paginate(items, page, per_page=10):\n"
+    "    start = page * per_page + 1\n"
+    "    end = start + per_page\n"
+    "    return items[start:end]\n\n\n"
+    "def merge_configs(base, overrides={}):\n"
+    "    base.update(overrides)\n"
+    "    return base\n\n\n"
+    "def old_format_name(first, last):\n"
+    "    # superseded by format_name; kept just in case\n"
+    "    return first + \" \" + last\n\n\n"
+    "def format_name(first, last):\n"
+    "    return f\"{first} {last}\"\n"
+)
+_A_API = (
+    "from auth import login\n"
+    "from db import get_orders_for_users\n\n\n"
+    "def handle(method, path, body):\n"
+    "    if path == \"/login\":\n"
+    "        if login(body[\"username\"], body[\"password\"]):\n"
+    "            return 200, \"ok\"\n"
+    "        return 200, \"bad credentials\"\n"
+    "    if path == \"/orders\":\n"
+    "        try:\n"
+    "            return 200, get_orders_for_users(body[\"ids\"])\n"
+    "        except:\n"
+    "            return 500, \"error\"\n"
+    "    return 404, \"not found\"\n"
+)
+_A_TEST = (
+    "from auth import login\n"
+    "from api import handle\n\n\n"
+    "def test_login_rejects_wrong_password():\n"
+    "    assert login(\"alice\", \"wrong\") is False\n\n\n"
+    "def test_login_bad_credentials_returns_401():\n"
+    "    code, _ = handle(\"POST\", \"/login\",\n"
+    "                     {\"username\": \"alice\", \"password\": \"wrong\"})\n"
+    "    assert code == 401  # api.py currently returns 200\n"
+)
+_A_README = (
+    "# OrderApp\n\n"
+    "A small internal order service.\n\n"
+    "## Security\n\n"
+    "Passwords are hashed with bcrypt before storage.\n"
+)
+WORKSPACES = {
+    "report": {"utils.py": _WS_UTILS, "server.py": _WS_SERVER},
+    "report2": {"config.py": _A_CONFIG, "auth.py": _A_AUTH, "db.py": _A_DB,
+                "utils.py": _A_UTILS, "api.py": _A_API,
+                "test_auth.py": _A_TEST, "README.md": _A_README},
+}
+
+CONVERSATION_REPORT2 = [
+    {"kind": "report",    "prompt": "One test in test_auth.py fails against the current code. Find it and fix the code so it passes."},
+    {"kind": "fact",      "prompt": "What HTTP status code means Forbidden?"},
+    {"kind": "report",    "prompt": "Is auth.py safe to ship? If not, fix the single most serious problem."},
+    {"kind": "checkable", "prompt": "Name the four ACID properties and define each in one line.",
+     "check": "atomicity, consistency, isolation, durability"},
+    {"kind": "report",    "prompt": "Add input validation to the /login handler in api.py: reject requests missing username or password with a 400."},
+    {"kind": "explain",   "prompt": "Explain why parameterised SQL queries prevent injection."},
+    {"kind": "report",    "prompt": "db.py loads orders inefficiently. Fix the performance problem."},
+    {"kind": "report",    "prompt": "Remove the dead code in the repo."},
+    {"kind": "fact",      "prompt": "What does the SQL keyword DISTINCT do?"},
+    # GUARD: genuinely needs 5 items; a scope budget that drops them loses here.
+    {"kind": "report",    "prompt": "Do a full review of the repo and list the top 5 most severe issues, most severe first, one line each."},
+    {"kind": "checkable", "prompt": "List the four standard SQL isolation levels from weakest to strongest.",
+     "check": "read uncommitted, read committed, repeatable read, serializable"},
+    {"kind": "report",    "prompt": "paginate in utils.py corrupts its output. Find and fix the bug."},
+    {"kind": "decision",  "prompt": "Should config.py's settings move to environment variables for this internal tool?"},
+    # GUARD: legitimately a summary, but "a few lines" caps it; over-narration shows here.
+    {"kind": "report",    "prompt": "You've changed several files. Summarise the current state of the repo in a few lines."},
+    {"kind": "checkable", "prompt": "Name the three pillars of observability.",
+     "check": "logs, metrics, traces"},
+    {"kind": "report",    "prompt": "Review api.py and fix the most important remaining correctness issue."},
+]
+
+CONVERSATIONS = {"default": CONVERSATION, "coding": CONVERSATION_CODING,
+                 "report": CONVERSATION_REPORT, "report2": CONVERSATION_REPORT2}
 
 # --- prose-aware counting + tic detectors (shared with the other harnesses) --
 
@@ -284,9 +475,15 @@ def _env():
     return {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
 
 
-def claude_turn(prompt, style, model, cwd, resume=None, hook_script=None):
+def claude_turn(prompt, style, model, cwd, resume=None, hook_script=None,
+                allow_edits=False):
     """One headless turn. Returns (reply_text, session_id)."""
     settings = {"outputStyle": style}
+    if allow_edits:
+        # Report-shaped sessions do real file edits; -p mode auto-denies
+        # Edit/Write without this. Bash stays denied on purpose (keeps turns
+        # fast and the reply focused on the edit + report).
+        settings["permissions"] = {"allow": ["Read", "Write", "Edit", "Glob", "Grep"]}
     if hook_script:
         # Recency re-injection: a UserPromptSubmit hook fires at the newest turn.
         settings["hooks"] = {"UserPromptSubmit": [{"hooks": [
@@ -302,25 +499,36 @@ def claude_turn(prompt, style, model, cwd, resume=None, hook_script=None):
         cmd += ["--resume", resume]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True,
-                           timeout=300, env=_env(), cwd=cwd)
+                           timeout=420, env=_env(), cwd=cwd)
         data = json.loads(r.stdout)
         return data.get("result", ""), data.get("session_id", resume)
     except (subprocess.TimeoutExpired, json.JSONDecodeError, ValueError):
         return "", resume
 
 
-def claude_plain(prompt, system, model, cwd):
-    """One-shot judge call with a replacement system prompt."""
-    cmd = [
-        "claude", "-p", prompt, "--system-prompt", system, "--model", model,
-        "--mcp-config", '{"mcpServers":{}}', "--strict-mcp-config",
-    ]
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True,
-                           timeout=180, env=_env(), cwd=cwd)
-        return r.stdout.strip()
-    except subprocess.TimeoutExpired:
-        return ""
+def claude_plain(prompt, system, model, cwd=None):
+    """One-shot judge call with a replacement system prompt.
+
+    HERMETIC: always runs in its own fresh temp dir (never a caller's cwd), so
+    it can't inherit a project .claude/settings.json hook or CLAUDE.md, forces
+    outputStyle Default so no style is appended to the judge, and reads the
+    result from --output-format json (raw stdout comes back empty on any hiccup,
+    which silently scored judges 0 — the glance_bench v1 bug). cwd is ignored,
+    kept for call-site compatibility.
+    """
+    with tempfile.TemporaryDirectory(prefix="judge_") as jcwd:
+        cmd = [
+            "claude", "-p", prompt, "--system-prompt", system, "--model", model,
+            "--settings", '{"outputStyle":"Default"}',
+            "--mcp-config", '{"mcpServers":{}}', "--strict-mcp-config",
+            "--output-format", "json",
+        ]
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True,
+                               timeout=180, env=_env(), cwd=jcwd)
+            return json.loads(r.stdout).get("result", "").strip()
+        except (subprocess.TimeoutExpired, json.JSONDecodeError, ValueError):
+            return ""
 
 
 def judge_completeness(question, answer, model, cwd):
@@ -339,22 +547,57 @@ def judge_completeness(question, answer, model, cwd):
     return last
 
 
-def run_session(style, model, do_judge, conversation):
+def _style_body(path):
+    """Return a style/persona markdown file's body with YAML frontmatter stripped."""
+    with open(path) as f:
+        text = f.read()
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            text = text[text.find("\n", end + 1) + 1:]
+    return text.lstrip("\n")
+
+
+HOOKS = {"+hook": "say-less-gate.sh", "+scopehook": "say-less-scope.sh"}
+
+
+def run_session(style, model, do_judge, conversation, workspace=None):
     """One full multi-turn conversation under a style. Returns per-turn scores.
 
-    A style name ending in '+hook' runs the same output style PLUS the Say Less
-    recency re-injection hook (benchmark/hooks/say-less-gate.sh): it is copied
+    A style name ending in '+hook' (say-less-gate.sh: anti-anchoring nudge) or
+    '+scopehook' (say-less-scope.sh: same nudge + a structural scope budget)
+    runs the output style PLUS that UserPromptSubmit hook: the script is copied
     into the session's isolated temp cwd and wired in via --settings, so one
-    paired batch can compare style-alone vs style+hook under identical conditions.
+    paired batch can compare style-alone vs the hooks under identical conditions.
+
+    The condition 'SayLess-persona' delivers the SAME Say Less rule text
+    (STYLE_FILE body, frontmatter stripped) through the OTHER channel: it is
+    written as CLAUDE.md in the isolated cwd and the output style is set to
+    Default. So one paired batch can compare the identical words as an output
+    style (system prompt + Claude Code's re-injection reminders) vs as persona
+    memory (the # claudeMd block, no re-injection). Project CLAUDE.md is a
+    faithful, per-run-isolated proxy for ~/.claude/PERSONA.md (both land in the
+    same claudeMd context region); a global symlink would leak into every
+    condition, so it can't be used for an isolated A/B.
     """
-    hook = style.endswith("+hook")
-    real_style = style[:-len("+hook")] if hook else style
-    # Isolated empty dir so the agent isn't tempted into tool use.
+    suffix = next((s for s in HOOKS if style.endswith(s)), None)
+    persona = style == "SayLess-persona"
+    real_style = "Default" if persona else (style[:-len(suffix)] if suffix else style)
+    # Isolated dir: empty for Q&A shapes (no tool temptation); seeded with the
+    # report workspace when the conversation does real edits.
     with tempfile.TemporaryDirectory(prefix="drift_") as cwd:
+        if persona:
+            with open(os.path.join(cwd, "CLAUDE.md"), "w") as f:
+                f.write(_style_body(STYLE_FILE))
+        for name, content in (workspace or {}).items():
+            path = os.path.join(cwd, name)
+            os.makedirs(os.path.dirname(path), exist_ok=True) if os.path.dirname(name) else None
+            with open(path, "w") as f:
+                f.write(content)
         hook_script = None
-        if hook:
-            hook_script = os.path.join(cwd, "say-less-gate.sh")
-            with open(os.path.join(HERE, "hooks", "say-less-gate.sh")) as src:
+        if suffix:
+            hook_script = os.path.join(cwd, HOOKS[suffix])
+            with open(os.path.join(HERE, "hooks", HOOKS[suffix])) as src:
                 data = src.read()
             with open(hook_script, "w") as dst:
                 dst.write(data)
@@ -363,7 +606,8 @@ def run_session(style, model, do_judge, conversation):
         turns = []
         for i, step in enumerate(conversation):
             reply, sid = claude_turn(step["prompt"], real_style, model, cwd,
-                                     resume=sid if i else None, hook_script=hook_script)
+                                     resume=sid if i else None, hook_script=hook_script,
+                                     allow_edits=workspace is not None)
             s = score_reply(reply)
             s["kind"] = step["kind"]
             s["reply"] = reply  # kept for auditing judge scores / inspecting drift
@@ -437,8 +681,10 @@ def main():
     ap.add_argument("--workers", type=int, default=6, help="Parallel sessions.")
     ap.add_argument("--judge", action="store_true", help="Score completeness on checkable turns.")
     ap.add_argument("--conversation", choices=list(CONVERSATIONS), default="default",
-                    help="Which session shape: 'default' (16-turn mixed Q&A) or "
-                         "'coding' (28-turn coding/debugging-heavy; tests robustness to type+length).")
+                    help="Which session shape: 'default' (16-turn mixed Q&A), "
+                         "'coding' (28-turn coding/debugging-heavy), or "
+                         "'report' (14-turn task-report-heavy, single-file edits), or "
+                         "'report2' (16-turn heavy-result: 7-file app, audits/reviews).")
     ap.add_argument("--out", default=os.path.join(HERE, "drift_session_results.json"))
     args = ap.parse_args()
 
@@ -450,8 +696,10 @@ def main():
           f"model={args.model}, judge={args.judge}, conversation={args.conversation}", flush=True)
     print(f"styles: {', '.join(args.styles)}\n", flush=True)
 
+    workspace = WORKSPACES.get(args.conversation)
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
-        futs = {ex.submit(run_session, st, args.model, args.judge, conversation): (st, t)
+        futs = {ex.submit(run_session, st, args.model, args.judge, conversation,
+                          workspace): (st, t)
                 for st, t in jobs}
         done = 0
         for fut in as_completed(futs):
@@ -478,7 +726,7 @@ def main():
               f"{s['opener_rate']:>5} {s['closer_rate']:>5} {str(s['avg_completeness']):>6}")
 
     print("\n=== per-kind avg prose words ===")
-    kinds = ["fact", "decision", "checkable", "explain", "grow"]
+    kinds = ["fact", "decision", "checkable", "explain", "grow", "report"]
     print(f"{'style':16} " + " ".join(f"{k:>10}" for k in kinds))
     for st in args.styles:
         pk = summary[st]["per_kind_avg_words"]

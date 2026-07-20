@@ -25,26 +25,32 @@ import json
 import statistics as st
 
 
+# Which per-turn field to analyze. "words" = prose (code stripped); "total_words"
+# = everything incl. code/tables. Report over-narration adds structured prose,
+# which "words" captures; "total_words" additionally catches code-dumping.
+METRIC = "words"
+
+
 def half_split(turns_per_trial):
-    """Yield (first_half_words, second_half_words) flattened across trials."""
+    """Yield (first_half, second_half) of the active METRIC, flattened across trials."""
     first, second = [], []
     for trial in turns_per_trial:
         n = len(trial)
         h = n // 2
         for i, t in enumerate(trial):
-            (first if i < h else second).append(t["words"])
+            (first if i < h else second).append(t[METRIC])
     return first, second
 
 
 def kind_by_half(turns_per_trial):
-    """{kind: {'early': [words...], 'late': [words...]}} split at the session midpoint."""
+    """{kind: {'early': [...], 'late': [...]}} of the active METRIC, split at midpoint."""
     out = {}
     for trial in turns_per_trial:
         n = len(trial)
         h = n // 2
         for i, t in enumerate(trial):
             d = out.setdefault(t["kind"], {"early": [], "late": []})
-            d["late" if i >= h else "early"].append(t["words"])
+            d["late" if i >= h else "early"].append(t[METRIC])
     return out
 
 
@@ -73,7 +79,7 @@ def style_stats(turns_per_trial):
     per_turn = [[] for _ in range(n_turns)]
     for trial in turns_per_trial:
         for i, t in enumerate(trial):
-            per_turn[i].append(t["words"])
+            per_turn[i].append(t[METRIC])
     ys = [st.mean(w) if w else 0.0 for w in per_turn]
     xs = list(range(len(ys)))
     mx, my = st.mean(xs), st.mean(ys)
@@ -90,7 +96,7 @@ def style_stats(turns_per_trial):
         "em_total": sum(ems),
         "em_per_reply": round(sum(ems) / n_replies, 2),
         "second_half_sd_of_trial_means": round(
-            st.pstdev([st.mean([t["words"] for i, t in enumerate(tr) if i >= len(tr) // 2])
+            st.pstdev([st.mean([t[METRIC] for i, t in enumerate(tr) if i >= len(tr) // 2])
                        for tr in turns_per_trial]), 1) if len(turns_per_trial) > 1 else None,
         "completeness": completeness_audit(turns_per_trial),
     }
@@ -101,7 +107,11 @@ def main():
     ap.add_argument("results_json")
     ap.add_argument("--baseline", default=None,
                     help="style name to diff every other style against")
+    ap.add_argument("--metric", choices=["words", "total_words"], default="words",
+                    help="'words' = prose (code stripped); 'total_words' = incl. code/tables.")
     args = ap.parse_args()
+    global METRIC
+    METRIC = args.metric
 
     with open(args.results_json) as f:
         data = json.load(f)
@@ -109,7 +119,7 @@ def main():
     styles = list(raw.keys())
     stats = {stl: style_stats([tr for tr in raw[stl] if tr]) for stl in styles}
 
-    print(f"model={data.get('model')} trials={data.get('trials')}  file={args.results_json}\n")
+    print(f"model={data.get('model')} trials={data.get('trials')} metric={METRIC}  file={args.results_json}\n")
     hdr = (f"{'style':16} {'avg':>6} {'1st_h':>6} {'2nd_h':>6} {'gap':>6} {'drift%':>7} "
            f"{'slope':>6} {'em':>4} {'em/rep':>7} {'compl':>6} {'cN':>4} {'c0':>3}")
     print(hdr)
@@ -121,11 +131,11 @@ def main():
               f"{s['em_per_reply']:>7} {str(c['mean']):>6} {c['n']:>4} {c['zeros']:>3}")
 
     print("\n=== kind x half (early -> late avg prose words) ===")
-    print(f"{'style':16} " + " ".join(f"{k:>18}" for k in ["fact", "decision", "checkable", "explain", "grow"]))
+    print(f"{'style':16} " + " ".join(f"{k:>18}" for k in ["fact", "decision", "checkable", "explain", "grow", "report"]))
     for stl in styles:
         kh = kind_by_half([tr for tr in raw[stl] if tr])
         cells = []
-        for k in ["fact", "decision", "checkable", "explain", "grow"]:
+        for k in ["fact", "decision", "checkable", "explain", "grow", "report"]:
             d = kh.get(k)
             if d and d["early"] and d["late"]:
                 cells.append(f"{st.mean(d['early']):>7.0f}->{st.mean(d['late']):<9.0f}")
