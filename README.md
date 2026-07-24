@@ -1,14 +1,14 @@
 # Say Less
 
-Claude Code outputs so much you stop reading it. Then mistakes slip past you.
+Claude Code writes too much.
 
-Say Less is an output style: full reasoning, terse replies. The answer first, at a length you'll actually read.
+Say Less is a Claude Plugin that cuts word count by up to 81% and on average 59%.
 
 ![median words per reply: Default 84, Say Less 34](words-per-reply.svg)
 
 ## Before / after
 
-Same prompt, same model. Real benchmark output, not a mock-up.
+Same prompt, same model, real benchmark output.
 
 > **Q: This SQL is slow on 10M rows:** `SELECT * FROM events WHERE DATE(created_at) = '2026-07-01';`
 
@@ -40,27 +40,46 @@ Also add an index on <code>created_at</code> if you don't have one, and replace 
 
 Same three findings. A third of the reading.
 
+Biggest cut so far, same prompt and model (Opus): **"What git command discards all uncommitted changes in the working tree?"** Default: 112 words. Say Less: 21.
+
+> `git checkout -- .` discards changes to tracked files in the working tree.
+>
+> To also remove untracked files: `git clean -fd`. For a full reset including staged changes: `git reset --hard HEAD`.
+
+Raw data: `benchmark/glance_opus_v1_v2.json`.
+
 ## Install
 
 ```bash
-git clone https://github.com/gichigi/say-less && cd say-less
-cp say-less-v3.2.md ~/.claude/output-styles/
+claude plugin marketplace add gichigi/say-less
+claude plugin install say-less@say-less
 ```
 
-Then `/config` → Output style → **Say Less v3.2** (or `"outputStyle": "Say Less v3.2"` in settings.json). Coding behaviour is untouched; only the reply style changes.
+Active immediately, no config. To turn it off: `claude plugin disable say-less`.
+
+Prefer a plain output style? Copy the one file instead:
+
+```bash
+git clone https://github.com/gichigi/say-less && cd say-less
+cp output-styles/say-less.md ~/.claude/output-styles/
+```
+
+Then `/config` → Output style → **Say Less**. Coding behavior is unchanged either way; only the reply style changes.
 
 ## Test it yourself
 
 ```bash
-python3 benchmark/spot.py "Say Less v3.2"   # 10 prompts, prints replies + word counts
+python3 benchmark/spot.py "Say Less"
 ```
 
-No judges, no scores; read the outputs and decide. Tweak the style file, rerun, compare.
+Prints 10 replies with word counts. No judges, no scores: read them and decide. Tweak the style file, rerun, compare.
 
 ## Why it's built this way
 
-Everything in the style is there because an experiment picked it. The short version: examples set the length (rules don't), one soft length bound is load-bearing, structure prescriptions backfire, and verbosity drifts back over long Opus sessions unless you re-inject (optional hook in `benchmark/hooks/`). Full findings with data: [benchmark/RESEARCH.md](benchmark/RESEARCH.md) and [benchmark/results/](benchmark/results/).
+Examples set the length; rules alone don't. One soft length bound is load-bearing (remove it and replies creep back up). Prescribing report structure backfires. On Opus, verbosity drifts back over long sessions unless re-injected (optional hook: `benchmark/hooks/`).
+
+Full findings, with data: [benchmark/RESEARCH.md](benchmark/RESEARCH.md), [benchmark/results/](benchmark/results/).
 
 ## Status
 
-Dogfooding v3.2. Not yet packaged as a plugin.
+Dogfooding. The shipped style is `output-styles/say-less.md`; earlier drafts are in `versions/` with their benchmark numbers in `benchmark/results/`.

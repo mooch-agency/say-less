@@ -1,0 +1,11 @@
+{
+  "name": "say-less",
+  "version": "0.1.0",
+  "description": "Cuts Claude Code's word count by 59% on average. Outcome first, at a length you'll actually read. Full reasoning is unchanged; only the reply shortens.",
+  "author": { "name": "Tahi Gichigi" },
+  "homepage": "https://github.com/gichigi/say-less",
+  "repository": "https://github.com/gichigi/say-less",
+  "license": "MIT",
+  "keywords": ["output-style", "brevity", "concise", "verbosity"],
+  "outputStyles": "./output-styles/"
+}
