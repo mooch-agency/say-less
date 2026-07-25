@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Say Less — see the difference</title>
+<meta name="description" content="Ask Claude anything and watch it answer twice: once normally, once with Say Less. Same model, same question.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#000; --ink:#1d1d1f; --paper:#fff; --surface:#fbfbfd;
+  --muted:#6e6e73; --muted-small:#5a5a5f; --hairline:#d2d2d7; --hairline-focus:#86868b;
+  --error:#b00020;
+  --serif:'Instrument Serif','Times New Roman',serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,"Liberation Mono",monospace;
+  --pad-x:clamp(20px,5vw,56px); --max:1320px;
+  --ease-decide:cubic-bezier(0.16,1,0.3,1); --ease-deliver:cubic-bezier(0.2,0,0,1);
+  --t-decide:1.56s; --t-deliver:0.15s;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:17px;line-height:1.5;font-feature-settings:"tnum","kern","liga","ss01";
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--max);margin:0 auto;padding:clamp(40px,7vw,88px) var(--pad-x) 96px}
+
+.eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:0.18em;color:var(--muted);margin:0 0 20px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,7vw,88px);
+  line-height:0.95;letter-spacing:-0.025em;color:var(--black);margin:0 0 16px;text-wrap:balance}
+h1 em{font-style:italic}
+.lede{font-size:19px;line-height:1.55;max-width:56ch;color:var(--muted-small);margin:0 0 40px}
+
+form{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+input[type=text]{flex:1;min-width:260px;padding:14px 18px;font:inherit;color:var(--ink);
+  background:var(--paper);border:1px solid var(--hairline);border-radius:12px;
+  transition:border-color var(--t-deliver) var(--ease-deliver)}
+input[type=text]:focus{outline:none;border-color:var(--ink)}
+.pill{font:inherit;font-size:14px;font-weight:500;letter-spacing:-0.005em;
+  padding:12px 22px;border-radius:980px;border:1px solid var(--black);
+  background:var(--black);color:var(--paper);cursor:pointer;
+  transition:transform var(--t-deliver) var(--ease-deliver),background var(--t-deliver) var(--ease-deliver)}
+.pill:hover:not(:disabled){transform:translateY(-1px);background:var(--ink)}
+.pill:active:not(:disabled){transform:scale(0.96)}
+.pill:disabled{opacity:.4;cursor:default}
+.pill:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+.examples{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+.ghost{font:inherit;font-size:13px;padding:8px 16px;border-radius:980px;
+  border:1px solid var(--hairline-focus);background:transparent;color:var(--ink);cursor:pointer;
+  transition:transform var(--t-deliver) var(--ease-deliver),border-color var(--t-deliver) var(--ease-deliver)}
+.ghost:hover{transform:translateY(-1px);border-color:var(--ink)}
+.ghost:active{transform:scale(0.96)}
+.ghost:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.note{font-size:13px;color:var(--muted);margin:0 0 32px}
+.note b{font-weight:500;color:var(--muted-small)}
+
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hairline);
+  border:1px solid var(--hairline)}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.col{background:var(--paper);padding:24px;min-width:0}
+.col.plain{background:var(--surface)}
+.colhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.colname{font-family:var(--mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:0.18em;color:var(--muted)}
+.count{font-family:var(--serif);font-size:34px;line-height:1;letter-spacing:-0.02em;
+  color:var(--black);font-variant-numeric:tabular-nums}
+.count .unit{font-family:var(--sans);font-size:12px;letter-spacing:0;color:var(--muted);margin-left:6px}
+.sub{font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 16px}
+.body{font-size:15px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word;min-height:2em}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);
+  animation:pulse 1s ease-in-out infinite;vertical-align:middle}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+
+.delta{border:1px solid var(--hairline);border-top:none;background:var(--paper);
+  padding:16px 24px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-height:58px}
+.delta b{font-family:var(--serif);font-weight:400;font-size:28px;letter-spacing:-0.02em;
+  color:var(--black);font-variant-numeric:tabular-nums}
+.delta span{font-size:15px;color:var(--muted-small)}
+.delta .err{color:var(--error)}
+
+.method{margin-top:56px;padding-top:20px;border-top:1px solid var(--hairline);
+  font-size:14px;color:var(--muted-small);max-width:68ch}
+.method code{font-family:var(--mono);font-size:12.5px}
+.method a{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Say Less</p>
+  <h1>Ask once.<br>Read <em>half</em> as much.</h1>
+  <p class="lede">Claude answers your question twice: once as it normally would, once with the Say Less style switched on. Same model, same question, same settings. Only the instructions differ.</p>
+
+  <form id="f">
+    <input type="text" id="q" placeholder="Ask anything, e.g. should I use UUIDs or integers for primary keys?" autocomplete="off" maxlength="1200">
+    <button class="pill" id="go" type="submit">Ask both</button>
+  </form>
+  <div class="examples" id="examples"></div>
+  <p class="note">Runs live on <b id="model">Claude</b>. Word counts are computed in your browser, not by the model.</p>
+
+  <div class="cols">
+    <div class="col plain">
+      <div class="colhead"><span class="colname">Claude</span>
+        <span class="count" id="cA">0<span class="unit">words</span></span></div>
+      <p class="sub">No style</p>
+      <div class="body" id="a"></div>
+    </div>
+    <div class="col">
+      <div class="colhead"><span class="colname">Say Less</span>
+        <span class="count" id="cB">0<span class="unit">words</span></span></div>
+      <p class="sub">Same model, style on</p>
+      <div class="body" id="b"></div>
+    </div>
+  </div>
+  <div class="delta" id="delta"><span>Ask a question to see both answers.</span></div>
+
+  <p class="method">Both answers stream at once, so the columns fill at their real speeds. The left side gets no system prompt; the right gets the Say Less style, and nothing else changes. Words are every whitespace-separated token containing a letter or digit, code included, because code is still reading. The style and its benchmarks are open source at <a href="https://github.com/gichigi/say-less">github.com/gichigi/say-less</a>.</p>
+</div>
+
+<script>
+const EXAMPLES = [
+  "Should I use UUIDs or auto-increment integers for primary keys in Postgres?",
+  "Explain what eventual consistency means for a web app.",
+  "Our Docker image is 2.1GB. How do I make it smaller?",
+  "Should we write unit tests for private methods?",
+  "What's Lord of the Rings about?"
+];
+
+const f = document.getElementById("f");
+const q = document.getElementById("q");
+const go = document.getElementById("go");
+const A = document.getElementById("a");
+const B = document.getElementById("b");
+const cA = document.getElementById("cA");
+const cB = document.getElementById("cB");
+const delta = document.getElementById("delta");
+const modelEl = document.getElementById("model");
+
+const ex = document.getElementById("examples");
+EXAMPLES.forEach((text) => {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "ghost";
+  btn.textContent = text.length > 46 ? text.slice(0, 44).trim() + "…" : text;
+  btn.title = text;
+  btn.addEventListener("click", () => { q.value = text; f.requestSubmit(); });
+  ex.appendChild(btn);
+});
+
+// Every word counts, code included: code is still reading. Matches total_words
+// in the repo benchmark.
+function countWords(t) {
+  return String(t || "").split(/\s+/).filter((w) => /[0-9A-Za-z]/.test(w)).length;
+}
+
+const buf = { default: "", sayless: "" };
+function paint() {
+  cA.innerHTML = countWords(buf.default) + '<span class="unit">words</span>';
+  cB.innerHTML = countWords(buf.sayless) + '<span class="unit">words</span>';
+}
+
+function finish() {
+  const a = countWords(buf.default), b = countWords(buf.sayless);
+  if (!a && !b) { delta.innerHTML = '<span class="err">No answer came back. Try again.</span>'; return; }
+  const p = a > 0 ? Math.round((1 - b / a) * 100) : 0;
+  if (p > 0) {
+    delta.innerHTML = "<b>" + p + "%</b><span>shorter with Say Less, " + a + " words down to " + b + ".</span>";
+  } else if (p === 0) {
+    delta.innerHTML = "<b>0%</b><span>same length, both " + a + " words.</span>";
+  } else {
+    delta.innerHTML = "<b>" + Math.abs(p) + "%</b><span>longer with Say Less, " + a + " words up to " + b + ". It happens: the style protects completeness over brevity.</span>";
+  }
+}
+
+let busy = false;
+f.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const prompt = q.value.trim();
+  if (!prompt || busy) return;
+  busy = true; go.disabled = true;
+  buf.default = ""; buf.sayless = "";
+  A.textContent = ""; B.textContent = ""; paint();
+  delta.innerHTML = '<span>Asking both<span class="dot" style="margin-left:8px"></span></span>';
+
+  let res;
+  try {
+    res = await fetch("/api/say-less", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+  } catch (err) {
+    delta.innerHTML = '<span class="err">Could not reach the server. Check your connection.</span>';
+    busy = false; go.disabled = false; return;
+  }
+  if (!res.ok || !res.body) {
+    const msg = await res.text().catch(() => "");
+    delta.innerHTML = '<span class="err">' + (msg || "That run failed. Try again.") + "</span>";
+    busy = false; go.disabled = false; return;
+  }
+
+  // Parse the SSE stream by hand: EventSource can't POST.
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let raw = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      raw += decoder.decode(value, { stream: true });
+      const chunks = raw.split("\n\n");
+      raw = chunks.pop() || "";
+      for (const chunk of chunks) {
+        const evLine = chunk.split("\n").find((l) => l.startsWith("event:"));
+        const dataLine = chunk.split("\n").find((l) => l.startsWith("data:"));
+        if (!dataLine) continue;
+        const name = evLine ? evLine.slice(6).trim() : "message";
+        let payload;
+        try { payload = JSON.parse(dataLine.slice(5).trim()); } catch { continue; }
+
+        if (name === "meta" && payload.model) {
+          modelEl.textContent = payload.model;
+        } else if (name === "error") {
+          delta.innerHTML = '<span class="err">' + payload + "</span>";
+        } else if (name === "message" && payload.arm) {
+          buf[payload.arm] += payload.t;
+          (payload.arm === "default" ? A : B).textContent = buf[payload.arm];
+          paint();
+        }
+      }
+    }
+  } catch (err) {
+    delta.innerHTML = '<span class="err">The stream dropped partway. Try again.</span>';
+    busy = false; go.disabled = false; return;
+  }
+  finish();
+  busy = false; go.disabled = false;
+});
+</script>
+</body>
+</html>
