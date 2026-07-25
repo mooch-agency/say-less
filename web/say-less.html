@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Say Less — see the difference</title>
-<meta name="description" content="Ask Claude anything and watch it answer twice: once normally, once with Say Less. Same model, same question.">
+<meta name="description" content="Ask Claude Code anything and watch it answer twice: once normally, once with Say Less. Same model, same question.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -17,72 +17,83 @@
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,"Liberation Mono",monospace;
   --pad-x:clamp(20px,5vw,56px); --max:1320px;
-  --ease-decide:cubic-bezier(0.16,1,0.3,1); --ease-deliver:cubic-bezier(0.2,0,0,1);
-  --t-decide:1.56s; --t-deliver:0.15s;
+  --ease-deliver:cubic-bezier(0.2,0,0,1); --t-deliver:0.15s;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
   font-size:17px;line-height:1.5;font-feature-settings:"tnum","kern","liga","ss01";
   -webkit-font-smoothing:antialiased}
-.wrap{max-width:var(--max);margin:0 auto;padding:clamp(40px,7vw,88px) var(--pad-x) 96px}
+/* Tight vertical rhythm on purpose: the result strip has to clear the fold. */
+.wrap{max-width:var(--max);margin:0 auto;padding:clamp(24px,4vw,44px) var(--pad-x) 88px}
 
 .eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;
-  letter-spacing:0.18em;color:var(--muted);margin:0 0 20px}
-h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,7vw,88px);
-  line-height:0.95;letter-spacing:-0.025em;color:var(--black);margin:0 0 16px;text-wrap:balance}
+  letter-spacing:0.18em;color:var(--muted);margin:0 0 14px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(36px,5.4vw,62px);
+  line-height:0.96;letter-spacing:-0.025em;color:var(--black);margin:0 0 12px;text-wrap:balance}
 h1 em{font-style:italic}
-.lede{font-size:19px;line-height:1.55;max-width:56ch;color:var(--muted-small);margin:0 0 40px}
+.lede{font-size:18px;line-height:1.5;max-width:58ch;color:var(--muted-small);margin:0 0 22px}
 
-form{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 12px}
-input[type=text]{flex:1;min-width:260px;padding:14px 18px;font:inherit;color:var(--ink);
+form{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+input[type=text]{flex:1;min-width:260px;padding:13px 18px;font:inherit;color:var(--ink);
   background:var(--paper);border:1px solid var(--hairline);border-radius:12px;
   transition:border-color var(--t-deliver) var(--ease-deliver)}
 input[type=text]:focus{outline:none;border-color:var(--ink)}
 .pill{font:inherit;font-size:14px;font-weight:500;letter-spacing:-0.005em;
-  padding:12px 22px;border-radius:980px;border:1px solid var(--black);
-  background:var(--black);color:var(--paper);cursor:pointer;
+  padding:12px 26px;border-radius:980px;border:1px solid var(--black);
+  background:var(--black);color:var(--paper);cursor:pointer;min-width:104px;
   transition:transform var(--t-deliver) var(--ease-deliver),background var(--t-deliver) var(--ease-deliver)}
-.pill:hover:not(:disabled){transform:translateY(-1px);background:var(--ink)}
-.pill:active:not(:disabled){transform:scale(0.96)}
-.pill:disabled{opacity:.4;cursor:default}
+.pill:hover{transform:translateY(-1px);background:var(--ink)}
+.pill:active{transform:scale(0.96)}
 .pill:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.pill.stop{background:var(--paper);color:var(--ink)}
+/* Let the field shrink rather than wrapping the button onto its own line,
+   which pushed the result strip below the fold on a phone. */
+@media (max-width:560px){
+  input[type=text]{min-width:0}
+  .pill{min-width:84px;padding:12px 18px}
+}
 
-.examples{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
-.ghost{font:inherit;font-size:13px;padding:8px 16px;border-radius:980px;
+.examples{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px}
+.exlabel{font-family:var(--mono);font-size:10px;text-transform:uppercase;
+  letter-spacing:0.14em;color:var(--muted);margin-right:2px}
+.ghost{font:inherit;font-size:13px;padding:7px 15px;border-radius:980px;
   border:1px solid var(--hairline-focus);background:transparent;color:var(--ink);cursor:pointer;
   transition:transform var(--t-deliver) var(--ease-deliver),border-color var(--t-deliver) var(--ease-deliver)}
 .ghost:hover{transform:translateY(-1px);border-color:var(--ink)}
 .ghost:active{transform:scale(0.96)}
 .ghost:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.note{font-size:13px;color:var(--muted);margin:0 0 32px}
-.note b{font-weight:500;color:var(--muted-small)}
+.note{font-size:13px;color:var(--muted);margin:0 0 18px}
+.note code{font-family:var(--mono);font-size:12px}
+
+/* The number people came for, above the fold, before the columns. */
+.result{border:1px solid var(--hairline);background:var(--surface);
+  padding:16px 22px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  min-height:62px;margin-bottom:-1px}
+.result b{font-family:var(--serif);font-weight:400;font-size:32px;letter-spacing:-0.02em;
+  color:var(--black);font-variant-numeric:tabular-nums;line-height:1}
+.result span{font-size:15px;color:var(--muted-small)}
+.result .err{color:var(--error)}
 
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hairline);
   border:1px solid var(--hairline)}
 @media (max-width:760px){.cols{grid-template-columns:1fr}}
-.col{background:var(--paper);padding:24px;min-width:0}
+.col{background:var(--paper);padding:22px;min-width:0}
 .col.plain{background:var(--surface)}
-.colhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.colhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
 .colname{font-family:var(--mono);font-size:11px;text-transform:uppercase;
   letter-spacing:0.18em;color:var(--muted)}
-.count{font-family:var(--serif);font-size:34px;line-height:1;letter-spacing:-0.02em;
+.count{font-family:var(--serif);font-size:32px;line-height:1;letter-spacing:-0.02em;
   color:var(--black);font-variant-numeric:tabular-nums}
 .count .unit{font-family:var(--sans);font-size:12px;letter-spacing:0;color:var(--muted);margin-left:6px}
 .sub{font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
-  color:var(--muted);margin:0 0 16px}
+  color:var(--muted);margin:0 0 14px;font-variant-numeric:tabular-nums;min-height:14px}
+.sub.fail{color:var(--error)}
 .body{font-size:15px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word;min-height:2em}
-.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);
-  animation:pulse 1s ease-in-out infinite;vertical-align:middle}
-@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;
+  animation:pulse 1s ease-in-out infinite;vertical-align:middle;margin-right:5px}
+@keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
 
-.delta{border:1px solid var(--hairline);border-top:none;background:var(--paper);
-  padding:16px 24px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-height:58px}
-.delta b{font-family:var(--serif);font-weight:400;font-size:28px;letter-spacing:-0.02em;
-  color:var(--black);font-variant-numeric:tabular-nums}
-.delta span{font-size:15px;color:var(--muted-small)}
-.delta .err{color:var(--error)}
-
-.method{margin-top:56px;padding-top:20px;border-top:1px solid var(--hairline);
+.method{margin-top:48px;padding-top:20px;border-top:1px solid var(--hairline);
   font-size:14px;color:var(--muted-small);max-width:68ch}
 .method code{font-family:var(--mono);font-size:12.5px}
 .method a{color:var(--ink)}
@@ -93,61 +104,71 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
 <div class="wrap">
   <p class="eyebrow">Say Less</p>
   <h1>Make Claude<br><em>say less</em>.</h1>
-  <p class="lede">Claude Code answers your question twice: once as it normally would, once with the Say Less style switched on. Same model, same question, same settings. Only the style differs.</p>
+  <p class="lede">One question, answered twice at the same time: once by stock Claude Code, once with the Say Less style on. Same model, same settings.</p>
 
   <form id="f">
     <input type="text" id="q" placeholder="Ask anything, e.g. should I use UUIDs or integers for primary keys?" autocomplete="off" maxlength="1200">
-    <button class="pill" id="go" type="submit">Ask both</button>
+    <button class="pill" id="go" type="submit">Ask</button>
   </form>
-  <div class="examples" id="examples"></div>
-  <p class="note">Runs on your machine on <b id="model">Claude</b>. Word counts are computed in your browser, not by the model.</p>
+  <div class="examples" id="examples"><span class="exlabel">Try</span></div>
+  <p class="note">Examples load into the box, they don't send. Expect a few seconds of quiet first: two <code>claude</code> sessions have to boot.</p>
+
+  <div class="result" id="result" aria-live="polite"><span>Ask a question. Both answers stream at once, and the gap between them is the point.</span></div>
 
   <div class="cols">
     <div class="col plain">
       <div class="colhead"><span class="colname">Claude Code</span>
         <span class="count" id="cA">0<span class="unit">words</span></span></div>
-      <p class="sub">Default</p>
+      <p class="sub" id="sA">Default</p>
       <div class="body" id="a"></div>
     </div>
     <div class="col">
       <div class="colhead"><span class="colname">Say Less</span>
         <span class="count" id="cB">0<span class="unit">words</span></span></div>
-      <p class="sub">Same model, style on</p>
+      <p class="sub" id="sB">Same model, style on</p>
       <div class="body" id="b"></div>
     </div>
   </div>
-  <div class="delta" id="delta"><span>Ask a question to see both answers.</span></div>
 
-  <p class="method">Both answers stream at once, so the columns fill at their real speeds. Each runs hermetically, with no user <code>CLAUDE.md</code>, settings or plugins reaching either side, so the output style is the only difference between them. Words are every whitespace-separated token containing a letter or digit, code included, because code is still reading. The style and its benchmarks are open source at <a href="https://github.com/gichigi/say-less">github.com/gichigi/say-less</a>.</p>
+  <p class="method">Runs on your machine on <b id="model">Claude</b>. Each arm runs hermetically, with no user <code>CLAUDE.md</code>, settings or plugins reaching either side, so the output style is the only difference between them. Words are every whitespace-separated token containing a letter or digit, code included, because code is still reading, and they're counted in code, never by a model. The style and its benchmarks are open source at <a href="https://github.com/gichigi/say-less">github.com/gichigi/say-less</a>.</p>
 </div>
 
 <script>
+// [label, prompt] — the chip stays short, the prompt it loads doesn't have to.
 const EXAMPLES = [
-  "Should I use UUIDs or auto-increment integers for primary keys in Postgres?",
-  "Explain what eventual consistency means for a web app.",
-  "Our Docker image is 2.1GB. How do I make it smaller?",
-  "Should we write unit tests for private methods?",
-  "What's Lord of the Rings about?"
+  ["Primary keys", "Should I use UUIDs or auto-increment integers for primary keys in Postgres?"],
+  ["Eventual consistency", "Explain what eventual consistency means for a web app."],
+  ["Docker image size", "Our Docker image is 2.1GB. How do I make it smaller?"],
+  ["Testing privates", "Should we write unit tests for private methods?"],
+  ["Lord of the Rings", "What's Lord of the Rings about?"]
 ];
 
 const f = document.getElementById("f");
 const q = document.getElementById("q");
 const go = document.getElementById("go");
-const A = document.getElementById("a");
-const B = document.getElementById("b");
-const cA = document.getElementById("cA");
-const cB = document.getElementById("cB");
-const delta = document.getElementById("delta");
+const result = document.getElementById("result");
 const modelEl = document.getElementById("model");
 
+const UI = {
+  default: {body: document.getElementById("a"), count: document.getElementById("cA"),
+            sub: document.getElementById("sA"), idle: "Default", name: "Claude Code"},
+  sayless: {body: document.getElementById("b"), count: document.getElementById("cB"),
+            sub: document.getElementById("sB"), idle: "Same model, style on", name: "Say Less"}
+};
+
 const ex = document.getElementById("examples");
-EXAMPLES.forEach((text) => {
+EXAMPLES.forEach(([label, text]) => {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "ghost";
-  btn.textContent = text.length > 46 ? text.slice(0, 44).trim() + "…" : text;
+  btn.textContent = label;
   btn.title = text;
-  btn.addEventListener("click", () => { q.value = text; f.requestSubmit(); });
+  // Loads the prompt for review; sending stays the user's call.
+  btn.addEventListener("click", () => {
+    q.value = text;
+    q.focus();
+    q.setSelectionRange(text.length, text.length);
+  });
   ex.appendChild(btn);
 });
 
@@ -156,71 +177,127 @@ EXAMPLES.forEach((text) => {
 function countWords(t) {
   return String(t || "").split(/\s+/).filter((w) => /[0-9A-Za-z]/.test(w)).length;
 }
+function setCount(arm, n) {
+  UI[arm].count.innerHTML = n + '<span class="unit">words</span>';
+}
+function say(html) { result.innerHTML = html; }
+function sayError(text) {
+  result.textContent = "";
+  const s = document.createElement("span");
+  s.className = "err";
+  s.textContent = text;           // server text, never parsed as markup
+  result.appendChild(s);
+}
 
-const buf = { default: "", sayless: "" };
-function paint() {
-  cA.innerHTML = countWords(buf.default) + '<span class="unit">words</span>';
-  cB.innerHTML = countWords(buf.sayless) + '<span class="unit">words</span>';
+let es = null, busy = false, timer = null, t0 = 0;
+const arm = {};
+
+function reset() {
+  for (const k of Object.keys(UI)) {
+    arm[k] = {text: "", words: null, done: false, error: null, first: 0, end: 0};
+    UI[k].body.textContent = "";
+    UI[k].sub.className = "sub";
+    setCount(k, 0);
+  }
+}
+
+function secs(ms) { return (ms / 1000).toFixed(1) + "s"; }
+
+// Each column runs its own clock, so two columns ticking at once is the proof
+// that the arms are parallel. Without it, the short arm finishing early reads
+// as "it ran them one after the other".
+function tick() {
+  const now = performance.now();
+  for (const k of Object.keys(UI)) {
+    const a = arm[k];
+    if (a.error) { UI[k].sub.textContent = "failed"; UI[k].sub.className = "sub fail"; continue; }
+    if (a.done) { UI[k].sub.textContent = "done in " + secs(a.end - t0); continue; }
+    UI[k].sub.innerHTML = '<span class="dot"></span>' +
+      (a.first ? "writing " : "starting ") + secs(now - t0);
+  }
+}
+
+function stopTimer() { if (timer) { clearInterval(timer); timer = null; } tick(); }
+
+function idle() {
+  busy = false;
+  go.textContent = "Ask";
+  go.classList.remove("stop");
+  if (es) { es.close(); es = null; }
+  stopTimer();
 }
 
 function finish() {
-  const a = countWords(buf.default), b = countWords(buf.sayless);
-  if (!a && !b) { delta.innerHTML = '<span class="err">No answer came back. Try again.</span>'; return; }
-  const p = a > 0 ? Math.round((1 - b / a) * 100) : 0;
-  if (p > 0) {
-    delta.innerHTML = "<b>" + p + "%</b><span>shorter with Say Less, " + a + " words down to " + b + ".</span>";
-  } else if (p === 0) {
-    delta.innerHTML = "<b>0%</b><span>same length, both " + a + " words.</span>";
-  } else {
-    delta.innerHTML = "<b>" + Math.abs(p) + "%</b><span>longer with Say Less, " + a + " words up to " + b + ". It happens: the style protects completeness over brevity.</span>";
+  idle();
+  const failed = Object.keys(UI).filter((k) => arm[k].error);
+  if (failed.length) {
+    sayError(failed.map((k) => UI[k].name + ": " + arm[k].error).join("  ·  "));
+    return;
   }
+  const a = arm.default.words, b = arm.sayless.words;
+  if (!a || !b) { sayError("One side came back empty. Try again."); return; }
+  if (a === b) { say("<b>0%</b><span>same length, both " + a + " words.</span>"); return; }
+  const p = Math.round(Math.abs(1 - b / a) * 100);
+  say(b < a
+    ? "<b>" + p + "%</b><span>shorter with Say Less, " + a + " words down to " + b + ".</span>"
+    : "<b>" + p + "%</b><span>longer with Say Less, " + a + " words up to " + b +
+      ". It happens: the style protects completeness over brevity.</span>");
 }
 
 fetch("/model").then((r) => r.text()).then((t) => { modelEl.textContent = t.trim(); })
   .catch(() => {});
 
-let busy = false;
 f.addEventListener("submit", (e) => {
   e.preventDefault();
+  if (busy) { idle(); say("<span>Stopped.</span>"); return; }   // button doubles as Stop
   const prompt = q.value.trim();
-  if (!prompt || busy) return;
-  busy = true; go.disabled = true;
-  buf.default = ""; buf.sayless = "";
-  A.textContent = ""; B.textContent = ""; paint();
-  delta.innerHTML = '<span>Asking both<span class="dot" style="margin-left:8px"></span></span>';
+  if (!prompt) { q.focus(); return; }
 
-  // The server runs each arm as a separate `claude` process and interleaves
-  // their deltas onto one stream, so the columns fill at their real speeds.
-  const es = new EventSource("/run?q=" + encodeURIComponent(prompt));
-  let finished = 0;
-  const stop = () => { es.close(); busy = false; go.disabled = false; };
+  busy = true;
+  go.textContent = "Stop";
+  go.classList.add("stop");
+  reset();
+  t0 = performance.now();
+  say('<span><span class="dot"></span>Both running now, side by side.</span>');
+  timer = setInterval(tick, 100);
+  tick();
+
+  // The server runs each arm as its own `claude` process and interleaves their
+  // deltas onto one stream, so the columns fill at their real speeds.
+  es = new EventSource("/run?q=" + encodeURIComponent(prompt));
+  let settled = 0;
 
   es.onmessage = (ev) => {
     let d;
     try { d = JSON.parse(ev.data); } catch { return; }
-    if (d.error) {
-      delta.innerHTML = '<span class="err">' + d.arm + ": " + d.error + "</span>";
-      stop();
-      return;
-    }
+    const a = arm[d.arm];
+    if (!a) return;
+
     if (d.delta) {
-      buf[d.arm] += d.delta;
-      (d.arm === "default" ? A : B).textContent = buf[d.arm];
-      paint();
+      if (!a.first) a.first = performance.now();
+      a.text += d.delta;
+      UI[d.arm].body.textContent = a.text;
+      setCount(d.arm, countWords(a.text));
       return;
     }
-    if (d.done) {
-      // Trust the server's own count once an arm finishes; it uses the same
-      // rule as the benchmark, so the page can't drift from the numbers.
-      if (typeof d.words === "number") {
-        (d.arm === "default" ? cA : cB).innerHTML = d.words + '<span class="unit">words</span>';
-      }
-      if (++finished === 2) { finish(); stop(); }
-    }
+    // One arm failing is not a reason to throw away the other, so the stream
+    // stays open until both have settled either way.
+    if (d.error) { a.error = d.error; a.end = performance.now(); }
+    else if (d.done) {
+      a.done = true;
+      a.end = performance.now();
+      // Trust the server's count once an arm finishes; same rule as the
+      // benchmark, so the page can't drift from the published numbers.
+      a.words = typeof d.words === "number" ? d.words : countWords(a.text);
+      setCount(d.arm, a.words);
+    } else return;
+    if (++settled === 2) finish();
   };
+
   es.onerror = () => {
-    if (busy) delta.innerHTML = '<span class="err">The stream dropped. Is the server still running?</span>';
-    stop();
+    if (!busy) return;
+    idle();
+    sayError("The stream dropped. Is the server still running?");
   };
 });
 </script>

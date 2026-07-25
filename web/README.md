@@ -11,6 +11,15 @@ python3 benchmark/serve_compare.py     # http://localhost:8787
 The page is served by [`benchmark/serve_compare.py`](../benchmark/serve_compare.py),
 which re-reads this file on every request, so edits show on refresh.
 
+Each column runs its own clock. Both start ticking together, which is what makes
+the parallelism visible: the Say Less arm usually finishes first and then sits
+there done while the default arm keeps writing. Expect two to three seconds of
+quiet before the first words, which is two `claude` sessions booting.
+
+Closing the tab or pressing Stop kills both `claude` processes within a couple of
+seconds, so an abandoned run doesn't keep burning usage. An arm that fails shows
+its error in place and the other one still finishes.
+
 ## Why it runs locally
 
 The left column has to be real Claude Code, and Claude Code's system prompt

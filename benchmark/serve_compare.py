@@ -25,6 +25,7 @@ import argparse
 import json
 import os
 import queue
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -38,6 +39,14 @@ STYLE = "Say Less"
 MODEL = "claude-sonnet-5"
 PAGE_FILE = os.path.join(HERE, "..", "web", "say-less.html")
 
+# A wedged CLI would otherwise leave the page spinning forever with no way back
+# except a reload, so every arm gets a hard ceiling.
+ARM_TIMEOUT = 180
+# Silence on the wire also means we never notice the browser has gone. Ping on
+# every idle beat so a closed tab surfaces as BrokenPipe within a couple of
+# seconds instead of at the next delta, which may be 8 seconds of startup away.
+PING_EVERY = 2
+
 
 def load_page():
     """The UI is web/say-less.html, re-read per request so edits show on refresh."""
@@ -45,9 +54,22 @@ def load_page():
         return f.read()
 
 
-def stream_arm(prompt, style, model, out_q, arm):
-    """Run one arm, pushing {'arm','delta'|'done'} onto out_q as text arrives."""
+def _tail(path, limit=400):
+    try:
+        with open(path) as f:
+            return f.read().strip()[-limit:]
+    except OSError:
+        return ""
+
+
+def stream_arm(prompt, style, model, out_q, arm, registry):
+    """Run one arm, pushing {'arm','delta'|'done'|'error'} onto out_q as text arrives.
+
+    Registers its Popen in `registry` so the request thread can kill it if the
+    browser goes away; an answer nobody will read still costs real usage.
+    """
     cwd = tempfile.mkdtemp(prefix=f"srv_{arm}_")
+    err_path = os.path.join(cwd, "stderr.log")
     try:
         if style != "Default":
             src = _resolve_style_file(style)
@@ -66,29 +88,48 @@ def stream_arm(prompt, style, model, out_q, arm):
             "--mcp-config", '{"mcpServers":{}}', "--strict-mcp-config",
             "--output-format", "stream-json", "--include-partial-messages", "--verbose",
         ]
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                                text=True, env=_env(), cwd=cwd)
+        # stderr goes to a file, not a pipe: nothing reads it during the run, and
+        # a full pipe buffer would deadlock the CLI mid-answer.
+        # stdin=DEVNULL is not cosmetic. Left inherited, the CLI spends 3s
+        # waiting to see if anything is being piped in, which measured as ~2.3s
+        # of extra dead air before the first word (4.75s -> 2.45s median).
+        with open(err_path, "w") as errf:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=errf,
+                                    stdin=subprocess.DEVNULL,
+                                    text=True, env=_env(), cwd=cwd)
+        registry[arm] = proc
+        watchdog = threading.Timer(ARM_TIMEOUT, proc.kill)
+        watchdog.daemon = True
+        watchdog.start()
         full = []
-        for line in proc.stdout:
-            try:
-                evt = json.loads(line)
-            except ValueError:
-                continue
-            if evt.get("type") == "stream_event":
-                e = evt.get("event", {})
-                if e.get("type") == "content_block_delta":
-                    piece = e.get("delta", {}).get("text", "")
-                    if piece:
-                        full.append(piece)
-                        out_q.put({"arm": arm, "delta": piece})
-        proc.wait()
+        try:
+            for line in proc.stdout:
+                try:
+                    evt = json.loads(line)
+                except ValueError:
+                    continue
+                if evt.get("type") == "stream_event":
+                    e = evt.get("event", {})
+                    if e.get("type") == "content_block_delta":
+                        piece = e.get("delta", {}).get("text", "")
+                        if piece:
+                            full.append(piece)
+                            out_q.put({"arm": arm, "delta": piece})
+            proc.wait()
+        finally:
+            watchdog.cancel()
         text = "".join(full)
+        # A non-zero exit with nothing to show is a failure, not a short answer.
+        # Reporting it as "0 words" would read as a win for whichever arm broke.
+        if proc.returncode != 0 and not text.strip():
+            out_q.put({"arm": arm, "error": _tail(err_path)
+                       or f"claude exited {proc.returncode}"})
+            return
         out_q.put({"arm": arm, "done": True, "text": text,
                    "words": total_words(text), "prose": prose_words(text)})
     except Exception as exc:  # surfaced in the UI rather than dying silently
         out_q.put({"arm": arm, "error": str(exc)})
     finally:
-        import shutil
         shutil.rmtree(cwd, ignore_errors=True)
 
 
@@ -130,22 +171,34 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "no-cache")
             self.end_headers()
             out_q = queue.Queue()
-            threads = [
-                threading.Thread(target=stream_arm, args=(prompt, "Default", self.model, out_q, "default"), daemon=True),
-                threading.Thread(target=stream_arm, args=(prompt, STYLE, self.model, out_q, "sayless"), daemon=True),
-            ]
-            for t in threads:
-                t.start()
+            procs = {}
+            # Both arms start here, in their own threads, and their deltas
+            # interleave on one queue. They really do run at the same time; the
+            # page shows each arm's own clock so that stays visible.
+            for style, arm in (("Default", "default"), (STYLE, "sayless")):
+                threading.Thread(target=stream_arm, daemon=True,
+                                 args=(prompt, style, self.model, out_q, arm, procs)).start()
             done = 0
-            while done < 2:
-                msg = out_q.get()
-                if msg.get("done") or msg.get("error"):
-                    done += 1
-                try:
-                    self.wfile.write(f"data: {json.dumps(msg)}\n\n".encode())
-                    self.wfile.flush()
-                except (BrokenPipeError, ConnectionResetError):
-                    return  # browser navigated away mid-run
+            try:
+                while done < 2:
+                    try:
+                        msg = out_q.get(timeout=PING_EVERY)
+                    except queue.Empty:
+                        msg = None  # idle beat: a comment line the client ignores
+                    payload = (f"data: {json.dumps(msg)}\n\n" if msg else ": ping\n\n")
+                    if msg and (msg.get("done") or msg.get("error")):
+                        done += 1
+                    try:
+                        self.wfile.write(payload.encode())
+                        self.wfile.flush()
+                    except (BrokenPipeError, ConnectionResetError):
+                        return  # browser navigated away mid-run
+            finally:
+                # However this ended (both finished, tab closed, arm failed),
+                # never leave a `claude` running for an answer nobody will read.
+                for p in list(procs.values()):
+                    if p.poll() is None:
+                        p.kill()
             return
         self.send_error(404)
 
