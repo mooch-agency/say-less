@@ -48,22 +48,24 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
 .pill.stop{background:var(--paper);color:var(--ink)}
 /* Let the field shrink rather than wrapping the button onto its own line,
    which pushed the result strip below the fold on a phone. */
+/* Stack instead of squeezing: a shrunk input plus a cramped button is worse
+   than full-width fields on top of each other, the standard mobile-form move. */
 @media (max-width:560px){
-  input[type=text]{min-width:0}
-  .pill{min-width:84px;padding:12px 18px}
+  form{flex-wrap:nowrap;flex-direction:column}
+  input[type=text]{min-width:0;width:100%}
+  .pill{width:100%;min-width:0}
 }
+/* 44px is the accepted minimum touch target (Apple HIG / WCAG 2.5.5); the
+   chips' default padding falls short of that on a phone. */
+@media (max-width:560px){.ghost{padding:12px 16px;min-height:44px}}
 
 .examples{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px}
-.exlabel{font-family:var(--mono);font-size:10px;text-transform:uppercase;
-  letter-spacing:0.14em;color:var(--muted);margin-right:2px}
 .ghost{font:inherit;font-size:13px;padding:7px 15px;border-radius:980px;
   border:1px solid var(--hairline-focus);background:transparent;color:var(--ink);cursor:pointer;
   transition:transform var(--t-deliver) var(--ease-deliver),border-color var(--t-deliver) var(--ease-deliver)}
 .ghost:hover{transform:translateY(-1px);border-color:var(--ink)}
 .ghost:active{transform:scale(0.96)}
 .ghost:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.note{font-size:13px;color:var(--muted);margin:0 0 18px}
-.note code{font-family:var(--mono);font-size:12px}
 
 /* The number people came for, above the fold, before the columns. */
 .result{border:1px solid var(--hairline);background:var(--surface);
@@ -76,8 +78,12 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
 
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hairline);
   border:1px solid var(--hairline)}
-@media (max-width:760px){.cols{grid-template-columns:1fr}}
+/* Stack only once two columns can't stay legibly narrow; keeping them side by
+   side up to 600px preserves the parallel-race visual on phone landscape and
+   small tablets, which is the whole point of the page. */
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
 .col{background:var(--paper);padding:22px;min-width:0}
+@media (max-width:600px){.col{padding:18px}}
 .col.plain{background:var(--surface)}
 .colhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
 .colname{font-family:var(--mono);font-size:11px;text-transform:uppercase;
@@ -89,12 +95,16 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
   color:var(--muted);margin:0 0 14px;font-variant-numeric:tabular-nums;min-height:14px}
 .sub.fail{color:var(--error)}
 .body{font-size:15px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word;min-height:2em}
+@media (max-width:600px){.body{font-size:16px}}
 .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;
   animation:pulse 1s ease-in-out infinite;vertical-align:middle;margin-right:5px}
 @keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
 
 .method{margin-top:48px;padding-top:20px;border-top:1px solid var(--hairline);
   font-size:14px;color:var(--muted-small);max-width:68ch}
+.method p{margin:0 0 12px}
+.method ul{margin:0 0 12px;padding-left:18px}
+.method li{margin:0 0 6px}
 .method code{font-family:var(--mono);font-size:12.5px}
 .method a{color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
@@ -110,8 +120,7 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
     <input type="text" id="q" placeholder="Ask anything, e.g. should I use UUIDs or integers for primary keys?" autocomplete="off" maxlength="1200">
     <button class="pill" id="go" type="submit">Ask</button>
   </form>
-  <div class="examples" id="examples"><span class="exlabel">Try</span></div>
-  <p class="note">Examples load into the box, they don't send. Expect a few seconds of quiet first: two <code>claude</code> sessions have to boot.</p>
+  <div class="examples" id="examples"></div>
 
   <div class="result" id="result" aria-live="polite"><span>Ask a question. Both answers stream at once, and the gap between them is the point.</span></div>
 
@@ -130,17 +139,29 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
     </div>
   </div>
 
-  <p class="method">Runs on your machine on <b id="model">Claude</b>. Each arm runs hermetically, with no user <code>CLAUDE.md</code>, settings or plugins reaching either side, so the output style is the only difference between them. Words are every whitespace-separated token containing a letter or digit, code included, because code is still reading, and they're counted in code, never by a model. The style and its benchmarks are open source at <a href="https://github.com/gichigi/say-less">github.com/gichigi/say-less</a>.</p>
+  <div class="method">
+    <p>Runs on your machine on <b id="model">Claude</b>.</p>
+    <ul>
+      <li>Hermetic: no user <code>CLAUDE.md</code>, settings, or plugins reach either arm, so the style is the only difference.</li>
+      <li>Words count every token with a letter or digit, code included, computed in code, never by a model.</li>
+      <li>Open source: <a href="https://github.com/gichigi/say-less">github.com/gichigi/say-less</a>.</li>
+    </ul>
+  </div>
 </div>
 
 <script>
 // [label, prompt] — the chip stays short, the prompt it loads doesn't have to.
+// Spans the range on purpose: a one-word fact, a one-line verdict, and a
+// multi-line how-to, so the chips preview the product's actual length range.
 const EXAMPLES = [
-  ["Primary keys", "Should I use UUIDs or auto-increment integers for primary keys in Postgres?"],
-  ["Eventual consistency", "Explain what eventual consistency means for a web app."],
-  ["Docker image size", "Our Docker image is 2.1GB. How do I make it smaller?"],
-  ["Testing privates", "Should we write unit tests for private methods?"],
-  ["Lord of the Rings", "What's Lord of the Rings about?"]
+  ["Default Postgres port?", "What's the default Postgres port?"],
+  ["REST or GraphQL?", "Should I use REST or GraphQL for a new internal API?"],
+  ["UUIDs or integers?", "Should I use UUIDs or auto-increment integers for primary keys in Postgres?"],
+  ["What's eventual consistency?", "Explain what eventual consistency means for a web app."],
+  ["Shrink a 2GB Docker image", "Our Docker image is 2.1GB. How do I make it smaller?"],
+  ["Test private methods?", "Should we write unit tests for private methods?"],
+  ["Resolve a merge conflict", "How do I resolve a git merge conflict?"],
+  ["What's an N+1 query?", "What's an N+1 query problem and how do I fix it?"]
 ];
 
 const f = document.getElementById("f");
