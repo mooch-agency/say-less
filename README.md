@@ -50,7 +50,7 @@ WHERE created_at &gt;= '2026-07-01' AND created_at &lt; '2026-07-02';
 
 Same findings, 58% less to read.
 
-See all 10 side by side, and paste your own: **[the comparison page](https://claude.ai/code/artifact/43a96ba4-2434-40ea-8b8c-dfab09852fd1)**.
+Ask it your own question and watch both answers stream: `python3 benchmark/serve_compare.py`.
 
 ## Install
 
@@ -73,7 +73,7 @@ Then `/config` → Output style → **Say Less**. Coding behavior is unchanged e
 ## Test it yourself
 
 ```bash
-python3 benchmark/serve_compare.py     # localhost:8787, type a prompt, watch both stream
+python3 benchmark/serve_compare.py     # localhost:8787, ask anything, watch both stream
 python3 benchmark/compare.py "..."     # same thing, one prompt, in the terminal
 python3 benchmark/spot.py "Say Less"   # 10 fixed prompts with word counts
 ```

@@ -93,20 +93,20 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
 <div class="wrap">
   <p class="eyebrow">Say Less</p>
   <h1>Make Claude<br><em>say less</em>.</h1>
-  <p class="lede">Claude answers your question twice: once as it normally would, once with the Say Less style switched on. Same model, same question, same settings. Only the instructions differ.</p>
+  <p class="lede">Claude Code answers your question twice: once as it normally would, once with the Say Less style switched on. Same model, same question, same settings. Only the style differs.</p>
 
   <form id="f">
     <input type="text" id="q" placeholder="Ask anything, e.g. should I use UUIDs or integers for primary keys?" autocomplete="off" maxlength="1200">
     <button class="pill" id="go" type="submit">Ask both</button>
   </form>
   <div class="examples" id="examples"></div>
-  <p class="note">Runs live on <b id="model">Claude</b>. Word counts are computed in your browser, not by the model.</p>
+  <p class="note">Runs on your machine on <b id="model">Claude</b>. Word counts are computed in your browser, not by the model.</p>
 
   <div class="cols">
     <div class="col plain">
-      <div class="colhead"><span class="colname">Claude</span>
+      <div class="colhead"><span class="colname">Claude Code</span>
         <span class="count" id="cA">0<span class="unit">words</span></span></div>
-      <p class="sub">No style</p>
+      <p class="sub">Default</p>
       <div class="body" id="a"></div>
     </div>
     <div class="col">
@@ -118,7 +118,7 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
   </div>
   <div class="delta" id="delta"><span>Ask a question to see both answers.</span></div>
 
-  <p class="method">Both answers stream at once, so the columns fill at their real speeds. The left side gets no system prompt; the right gets the Say Less style, and nothing else changes. Words are every whitespace-separated token containing a letter or digit, code included, because code is still reading. The style and its benchmarks are open source at <a href="https://github.com/gichigi/say-less">github.com/gichigi/say-less</a>.</p>
+  <p class="method">Both answers stream at once, so the columns fill at their real speeds. Each runs hermetically, with no user <code>CLAUDE.md</code>, settings or plugins reaching either side, so the output style is the only difference between them. Words are every whitespace-separated token containing a letter or digit, code included, because code is still reading. The style and its benchmarks are open source at <a href="https://github.com/gichigi/say-less">github.com/gichigi/say-less</a>.</p>
 </div>
 
 <script>
@@ -176,8 +176,11 @@ function finish() {
   }
 }
 
+fetch("/model").then((r) => r.text()).then((t) => { modelEl.textContent = t.trim(); })
+  .catch(() => {});
+
 let busy = false;
-f.addEventListener("submit", async (e) => {
+f.addEventListener("submit", (e) => {
   e.preventDefault();
   const prompt = q.value.trim();
   if (!prompt || busy) return;
@@ -186,59 +189,39 @@ f.addEventListener("submit", async (e) => {
   A.textContent = ""; B.textContent = ""; paint();
   delta.innerHTML = '<span>Asking both<span class="dot" style="margin-left:8px"></span></span>';
 
-  let res;
-  try {
-    res = await fetch("/api/say-less", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prompt })
-    });
-  } catch (err) {
-    delta.innerHTML = '<span class="err">Could not reach the server. Check your connection.</span>';
-    busy = false; go.disabled = false; return;
-  }
-  if (!res.ok || !res.body) {
-    const msg = await res.text().catch(() => "");
-    delta.innerHTML = '<span class="err">' + (msg || "That run failed. Try again.") + "</span>";
-    busy = false; go.disabled = false; return;
-  }
+  // The server runs each arm as a separate `claude` process and interleaves
+  // their deltas onto one stream, so the columns fill at their real speeds.
+  const es = new EventSource("/run?q=" + encodeURIComponent(prompt));
+  let finished = 0;
+  const stop = () => { es.close(); busy = false; go.disabled = false; };
 
-  // Parse the SSE stream by hand: EventSource can't POST.
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let raw = "";
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      raw += decoder.decode(value, { stream: true });
-      const chunks = raw.split("\n\n");
-      raw = chunks.pop() || "";
-      for (const chunk of chunks) {
-        const evLine = chunk.split("\n").find((l) => l.startsWith("event:"));
-        const dataLine = chunk.split("\n").find((l) => l.startsWith("data:"));
-        if (!dataLine) continue;
-        const name = evLine ? evLine.slice(6).trim() : "message";
-        let payload;
-        try { payload = JSON.parse(dataLine.slice(5).trim()); } catch { continue; }
-
-        if (name === "meta" && payload.model) {
-          modelEl.textContent = payload.model;
-        } else if (name === "error") {
-          delta.innerHTML = '<span class="err">' + payload + "</span>";
-        } else if (name === "message" && payload.arm) {
-          buf[payload.arm] += payload.t;
-          (payload.arm === "default" ? A : B).textContent = buf[payload.arm];
-          paint();
-        }
-      }
+  es.onmessage = (ev) => {
+    let d;
+    try { d = JSON.parse(ev.data); } catch { return; }
+    if (d.error) {
+      delta.innerHTML = '<span class="err">' + d.arm + ": " + d.error + "</span>";
+      stop();
+      return;
     }
-  } catch (err) {
-    delta.innerHTML = '<span class="err">The stream dropped partway. Try again.</span>';
-    busy = false; go.disabled = false; return;
-  }
-  finish();
-  busy = false; go.disabled = false;
+    if (d.delta) {
+      buf[d.arm] += d.delta;
+      (d.arm === "default" ? A : B).textContent = buf[d.arm];
+      paint();
+      return;
+    }
+    if (d.done) {
+      // Trust the server's own count once an arm finishes; it uses the same
+      // rule as the benchmark, so the page can't drift from the numbers.
+      if (typeof d.words === "number") {
+        (d.arm === "default" ? cA : cB).innerHTML = d.words + '<span class="unit">words</span>';
+      }
+      if (++finished === 2) { finish(); stop(); }
+    }
+  };
+  es.onerror = () => {
+    if (busy) delta.innerHTML = '<span class="err">The stream dropped. Is the server still running?</span>';
+    stop();
+  };
 });
 </script>
 </body>

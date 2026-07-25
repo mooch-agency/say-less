@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """
-serve_compare.py — type a prompt, watch stock Claude Code and Say Less answer
-side by side, live.
+serve_compare.py — ask Claude Code anything, watch it answer twice, live.
 
-The published comparison artifact can't do this: a hosted page has no model
-access and its CSP blocks network calls. This runs on your machine instead, so
-it can shell out to `claude` and stream both replies token by token.
+Serves web/say-less.html and streams both arms into it: the left column is
+stock Claude Code, the right is the same model with the Say Less style. Word
+counts update as the text arrives.
+
+This is the only comparison UI, and it runs locally on purpose. The left arm
+has to be real Claude Code, and Claude Code's system prompt lives inside the
+CLI, so it cannot be reproduced from an API key. Nothing here needs one: it
+shells out to your logged-in `claude` session.
 
 Both arms run hermetically (--setting-sources project): no user CLAUDE.md, no
 user settings, no user-scope plugins. Without that the Say Less plugin, being
@@ -14,7 +18,7 @@ too and the comparison would be meaningless.
 
 Usage:
   python3 benchmark/serve_compare.py            # http://localhost:8787
-  python3 benchmark/serve_compare.py --port 9000 --model opus
+  python3 benchmark/serve_compare.py --port 9000 --model claude-opus-4-8
 """
 
 import argparse
@@ -32,6 +36,13 @@ from drift_session import prose_words, total_words, _resolve_style_file, _env
 HERE = os.path.dirname(os.path.abspath(__file__))
 STYLE = "Say Less"
 MODEL = "claude-sonnet-5"
+PAGE_FILE = os.path.join(HERE, "..", "web", "say-less.html")
+
+
+def load_page():
+    """The UI is web/say-less.html, re-read per request so edits show on refresh."""
+    with open(PAGE_FILE) as f:
+        return f.read()
 
 
 def stream_arm(prompt, style, model, out_q, arm):
@@ -81,99 +92,6 @@ def stream_arm(prompt, style, model, out_q, arm):
         shutil.rmtree(cwd, ignore_errors=True)
 
 
-PAGE = r"""<!doctype html><html><head><meta charset="utf-8">
-<title>Say Less: run your own</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-:root{--paper:#fff;--surface:#fbfbfd;--ink:#1d1d1f;--black:#000;--muted:#6e6e73;--hairline:#d2d2d7;
---sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
---mono:ui-monospace,SFMono-Regular,Menlo,monospace;}
-@media (prefers-color-scheme:dark){:root{--paper:#000;--surface:#0a0a0b;--ink:#fff;--black:#fff;
---muted:#8e8e93;--hairline:#2a2a2c;}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;
-line-height:1.5;padding:clamp(24px,5vw,56px);font-feature-settings:"tnum"}
-.wrap{max-width:1320px;margin:0 auto}
-.eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.18em;
-color:var(--muted);margin:0 0 14px}
-h1{font-size:clamp(24px,3vw,34px);margin:0 0 22px;letter-spacing:-.02em;font-weight:600}
-form{display:flex;gap:8px;margin-bottom:8px}
-input{flex:1;min-width:0;padding:13px 15px;border:1px solid var(--hairline);border-radius:12px;
-background:var(--paper);color:var(--ink);font:inherit}
-input:focus{outline:none;border-color:var(--ink)}
-button{padding:0 22px;border-radius:980px;border:1px solid var(--black);background:var(--black);
-color:var(--paper);font:inherit;font-weight:500;cursor:pointer}
-button:disabled{opacity:.45;cursor:default}
-.note{font-size:13px;color:var(--muted);margin:0 0 24px}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hairline);
-border:1px solid var(--hairline)}
-@media (max-width:760px){.cols{grid-template-columns:1fr}}
-.col{background:var(--paper);padding:20px;min-width:0}
-.col.d{background:var(--surface)}
-.head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
-.name{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted)}
-.n{font-size:26px;font-variant-numeric:tabular-nums}
-.n small{font-size:12px;color:var(--muted);margin-left:5px}
-pre{white-space:pre-wrap;word-wrap:break-word;font-family:var(--sans);font-size:15px;margin:0}
-.delta{border:1px solid var(--hairline);border-top:none;padding:14px 20px;font-size:15px}
-.delta b{font-size:22px;font-variant-numeric:tabular-nums;margin-right:8px}
-.err{color:#b00020}
-.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);
-margin-left:8px;animation:p 1s ease-in-out infinite}
-@keyframes p{0%,100%{opacity:.25}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.dot{animation:none}}
-</style></head><body><div class="wrap">
-<p class="eyebrow">Say Less</p>
-<h1>Run your own prompt</h1>
-<form id="f"><input id="q" placeholder="Ask anything, e.g. should I use UUIDs or integers for primary keys?" autocomplete="off" autofocus>
-<button id="go">Run both</button></form>
-<p class="note">Runs on your machine, hermetically: no user CLAUDE.md, settings or plugins reach either side. Model: <span id="m"></span></p>
-<div class="cols">
-  <div class="col d"><div class="head"><span class="name">Default</span><span class="n" id="nA">0<small>words</small></span></div><pre id="a"></pre></div>
-  <div class="col"><div class="head"><span class="name">Say Less</span><span class="n" id="nB">0<small>words</small></span></div><pre id="b"></pre></div>
-</div>
-<div class="delta" id="delta">Type a question and hit Run both.</div>
-</div>
-<script>
-const f=document.getElementById("f"),q=document.getElementById("q"),go=document.getElementById("go");
-const A=document.getElementById("a"),B=document.getElementById("b");
-const nA=document.getElementById("nA"),nB=document.getElementById("nB"),delta=document.getElementById("delta");
-fetch("/model").then(r=>r.text()).then(t=>document.getElementById("m").textContent=t);
-
-// headline = every word incl. code (real reading load); matches total_words()
-function totalWords(t){return String(t||"").split(/\s+/).filter(x=>/[0-9A-Za-z]/.test(x)).length;}
-const buf={default:"",sayless:""};
-function paint(){nA.innerHTML=totalWords(buf.default)+"<small>words</small>";
- nB.innerHTML=totalWords(buf.sayless)+"<small>words</small>";}
-
-f.addEventListener("submit",ev=>{
-  ev.preventDefault();
-  const prompt=q.value.trim(); if(!prompt) return;
-  buf.default="";buf.sayless="";A.textContent="";B.textContent="";paint();
-  go.disabled=true; delta.innerHTML='Running both<span class="dot"></span>';
-  const es=new EventSource("/run?q="+encodeURIComponent(prompt));
-  let finished=0,res={};
-  es.onmessage=e=>{
-    const d=JSON.parse(e.data);
-    if(d.error){delta.innerHTML='<span class="err">'+d.arm+': '+d.error+'</span>';go.disabled=false;es.close();return;}
-    if(d.delta){buf[d.arm]+=d.delta;(d.arm==="default"?A:B).textContent=buf[d.arm];paint();return;}
-    if(d.done){
-      res[d.arm]=d.words; finished++;
-      if(finished===2){
-        es.close(); go.disabled=false;
-        const a=res.default,b=res.sayless;
-        const p=a>0?Math.round((1-b/a)*100):0;
-        delta.innerHTML= p>0 ? "<b>"+p+"%</b> shorter with Say Less, "+a+" words down to "+b+"."
-          : p===0 ? "<b>0%</b> same length, both "+a+" words."
-          : "<b>"+Math.abs(p)+"%</b> longer with Say Less, "+a+" words up to "+b+".";
-      }
-    }
-  };
-  es.onerror=()=>{go.disabled=false;es.close();};
-});
-</script></body></html>"""
-
-
 class Handler(BaseHTTPRequestHandler):
     model = MODEL
 
@@ -182,8 +100,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         u = urlparse(self.path)
-        if u.path == "/":
-            body = PAGE.encode()
+        if u.path in ("/", "/say-less", "/say-less.html"):
+            try:
+                body = load_page().encode()
+            except OSError:
+                self.send_error(500, "web/say-less.html not found")
+                return
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
@@ -229,13 +151,13 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Local live Default vs Say Less comparison.")
+    ap = argparse.ArgumentParser(description="Ask Claude Code anything, twice, side by side.")
     ap.add_argument("--port", type=int, default=8787)
     ap.add_argument("--model", default=MODEL)
     args = ap.parse_args()
     Handler.model = args.model
     srv = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
-    print(f"\n  Say Less compare  ->  http://localhost:{args.port}   (model: {args.model})")
+    print(f"\n  Say Less  ->  http://localhost:{args.port}   (model: {args.model})")
     print("  ctrl-c to stop\n")
     try:
         srv.serve_forever()
