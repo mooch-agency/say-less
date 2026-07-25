@@ -14,3 +14,4 @@ benchmark/position_results_*.json
 
 # hook firing log (working file, if ever written to a project dir)
 hook_fired.log
+benchmark/paired_2x2.json

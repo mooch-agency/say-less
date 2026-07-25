@@ -37,7 +37,7 @@ Replies should open with the answer and stay short. A quick smoke test:
 python3 benchmark/spot.py "Say Less"
 ```
 
-Prints 10 replies with word counts. Median should land around 34 prose words; default Claude Code is around 84.
+Prints 10 replies with word counts. Median should land around 40-60 words (code included); default Claude Code is around 130.
 
 ### Verified on install (2026-07-24, Sonnet)
 

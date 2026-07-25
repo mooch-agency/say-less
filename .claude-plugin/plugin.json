@@ -1,6 +1,6 @@
 {
   "name": "say-less",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Cuts Claude Code's word count by 63% on average. Outcome first, at a length you'll actually read. Full reasoning is unchanged; only the reply shortens.",
   "author": {
     "name": "Tahi Gichigi"
