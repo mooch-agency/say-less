@@ -11,7 +11,7 @@ benchmark/drift_*.json
 benchmark/ab_*.json
 benchmark/glance_*.json
 benchmark/position_results_*.json
+benchmark/paired_*.json
 
 # hook firing log (working file, if ever written to a project dir)
 hook_fired.log
-benchmark/paired_2x2.json

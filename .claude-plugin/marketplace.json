@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "say-less",
-      "description": "Cuts word count 63% on average, up to 86%. Outcome first, detail on request.",
+      "description": "Cuts word count 71% on average, up to 80%. Outcome first, detail on request.",
       "source": "./",
       "category": "productivity"
     }

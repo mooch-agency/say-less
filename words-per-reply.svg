@@ -10,9 +10,9 @@
   <text x="20" y="28" class="title">median words per reply · 10 prompts x 3 runs · sonnet</text>
   <text x="20" y="70" class="label">Default</text>
   <rect x="130" y="52" width="440" height="26" rx="4" fill="#c9553e"/>
-  <text x="580" y="70" class="num">129</text>
+  <text x="580" y="70" class="num">171</text>
   <text x="20" y="118" class="label">Say Less</text>
-  <rect x="130" y="100" width="143" height="26" rx="4" fill="#3e8e5a"/>
-  <text x="283" y="118" class="num">42</text>
-  <text x="130" y="160" class="title">63% fewer words. Shorter on all 10 prompts, by 41% to 86%.</text>
+  <rect x="130" y="100" width="129" height="26" rx="4" fill="#3e8e5a"/>
+  <text x="269" y="118" class="num">50</text>
+  <text x="130" y="160" class="title">71% fewer words. Shorter on all 10 prompts, by 61% to 80%.</text>
 </svg>

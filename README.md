@@ -1,10 +1,10 @@
 # Say Less
 
 Claude Code writes too much. Say Less is a Claude Code plugin that cuts word
-count by up to 86%, 63% on average. Reasoning and coding behavior are
+count by up to 80%, 71% on average. Reasoning and coding behavior are
 unchanged; only the reply gets shorter.
 
-![median words per reply: Default 129, Say Less 42](words-per-reply.svg)
+![median words per reply: Default 171, Say Less 50](words-per-reply.svg)
 
 **Status: private beta, invite-only.** The repo is private; the install
 commands below only work once you have read access. Ask Tahi.
@@ -88,9 +88,9 @@ Both arms run hermetically, so your own `CLAUDE.md` and plugins can't shorten ei
 
 Examples set the length; rules alone don't. One soft length bound is load-bearing (remove it and replies creep back up). Prescribing report structure backfires. On Opus, verbosity drifts back over long sessions unless re-injected (optional hook: `benchmark/hooks/`).
 
-Numbers come from 10 prompts run 3 times per arm, all hermetic (`--setting-sources project`), so a personal `CLAUDE.md` or an installed plugin can't quietly shorten either side. Say Less was shorter on all 10, by 41% to 86%. Counts include code, because code is still reading: stripping it scored Say Less as *longer* on the Docker prompt while it actually produced half the reading. Computed by `total_words`, never by a model.
+Numbers come from 10 prompts run 3 times per arm, all hermetic (`--setting-sources project`), so a personal `CLAUDE.md` or an installed plugin can't quietly shorten either side. Say Less was shorter on all 10, by 61% to 80%. Counts include code, because code is still reading: stripping it scored Say Less as *longer* on the Docker prompt while it actually produced half the reading. Computed by `total_words`, never by a model.
 
-Full findings, with data: [benchmark/RESEARCH.md](benchmark/RESEARCH.md), [benchmark/results/](benchmark/results/).
+Full findings, with data: [benchmark/RESEARCH.md](benchmark/RESEARCH.md), [benchmark/results/](benchmark/results/). Reproduce the headline number: `python3 benchmark/paired.py`.
 
 ## Feedback
 
