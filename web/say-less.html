@@ -107,6 +107,14 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
 .method li{margin:0 0 6px}
 .method code{font-family:var(--mono);font-size:12.5px}
 .method a{color:var(--ink)}
+
+.install{margin-top:32px;padding-top:20px;border-top:1px solid var(--hairline);
+  font-size:14px;color:var(--muted-small);max-width:68ch}
+.install p{margin:0 0 10px}
+.install pre{background:var(--surface);border:1px solid var(--hairline);border-radius:8px;
+  padding:14px 16px;overflow-x:auto;margin:0 0 14px;font-family:var(--mono);font-size:12.5px;
+  line-height:1.6;color:var(--ink);white-space:pre-wrap;word-wrap:break-word}
+.install a{color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 </style>
 </head>
@@ -142,10 +150,19 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
   <div class="method">
     <p>Runs on your machine on <b id="model">Claude</b>.</p>
     <ul>
-      <li>Hermetic: no user <code>CLAUDE.md</code>, settings, or plugins reach either arm, so the style is the only difference.</li>
+      <li>Nothing from your own setup reaches either arm: no personal <code>CLAUDE.md</code>, settings, or plugins. The style is the only difference between the two columns.</li>
       <li>Words count every token with a letter or digit, code included, computed in code, never by a model.</li>
-      <li>Open source: <a href="https://github.com/gichigi/say-less">github.com/gichigi/say-less</a>.</li>
     </ul>
+  </div>
+
+  <div class="install">
+    <p class="eyebrow">Install</p>
+    <p>Private beta, invite-only. Paste this into any Claude Code session:</p>
+    <pre><code>Install the Say Less plugin: run `claude plugin marketplace add gichigi/say-less` then `claude plugin install say-less@say-less`, then verify with `claude plugin list`. If the marketplace add fails with a clone or auth error, tell me this is an invite-only beta and I need repo access from Tahi first, and check `gh auth status`. Finish by telling me to restart my session and ask any question to see the style.</code></pre>
+    <p>Or run it yourself:</p>
+    <pre><code>claude plugin marketplace add gichigi/say-less
+claude plugin install say-less@say-less</code></pre>
+    <p>Don't have access yet? Ask Tahi. Repo: <a href="https://github.com/gichigi/say-less">github.com/gichigi/say-less</a>.</p>
   </div>
 </div>
 
@@ -210,42 +227,30 @@ function sayError(text) {
   result.appendChild(s);
 }
 
-let es = null, busy = false, timer = null, t0 = 0;
+let es = null, busy = false;
 const arm = {};
 
 function reset() {
   for (const k of Object.keys(UI)) {
-    arm[k] = {text: "", words: null, done: false, error: null, first: 0, end: 0};
+    arm[k] = {text: "", words: null, done: false, error: null, started: false};
     UI[k].body.textContent = "";
-    UI[k].sub.className = "sub";
+    setSub(k, '<span class="dot"></span>starting');
     setCount(k, 0);
   }
 }
 
-function secs(ms) { return (ms / 1000).toFixed(1) + "s"; }
-
-// Each column runs its own clock, so two columns ticking at once is the proof
-// that the arms are parallel. Without it, the short arm finishing early reads
-// as "it ran them one after the other".
-function tick() {
-  const now = performance.now();
-  for (const k of Object.keys(UI)) {
-    const a = arm[k];
-    if (a.error) { UI[k].sub.textContent = "failed"; UI[k].sub.className = "sub fail"; continue; }
-    if (a.done) { UI[k].sub.textContent = "done in " + secs(a.end - t0); continue; }
-    UI[k].sub.innerHTML = '<span class="dot"></span>' +
-      (a.first ? "writing " : "starting ") + secs(now - t0);
-  }
+// No elapsed time shown: the pulsing dot is the activity signal, both columns
+// pulsing at once is what proves the arms are running in parallel.
+function setSub(k, html, cls) {
+  UI[k].sub.innerHTML = html;
+  UI[k].sub.className = "sub" + (cls ? " " + cls : "");
 }
-
-function stopTimer() { if (timer) { clearInterval(timer); timer = null; } tick(); }
 
 function idle() {
   busy = false;
   go.textContent = "Ask";
   go.classList.remove("stop");
   if (es) { es.close(); es = null; }
-  stopTimer();
 }
 
 function finish() {
@@ -278,10 +283,7 @@ f.addEventListener("submit", (e) => {
   go.textContent = "Stop";
   go.classList.add("stop");
   reset();
-  t0 = performance.now();
   say('<span><span class="dot"></span>Both running now, side by side.</span>');
-  timer = setInterval(tick, 100);
-  tick();
 
   // The server runs each arm as its own `claude` process and interleaves their
   // deltas onto one stream, so the columns fill at their real speeds.
@@ -295,7 +297,7 @@ f.addEventListener("submit", (e) => {
     if (!a) return;
 
     if (d.delta) {
-      if (!a.first) a.first = performance.now();
+      if (!a.started) { a.started = true; setSub(d.arm, '<span class="dot"></span>writing'); }
       a.text += d.delta;
       UI[d.arm].body.textContent = a.text;
       setCount(d.arm, countWords(a.text));
@@ -303,10 +305,10 @@ f.addEventListener("submit", (e) => {
     }
     // One arm failing is not a reason to throw away the other, so the stream
     // stays open until both have settled either way.
-    if (d.error) { a.error = d.error; a.end = performance.now(); }
+    if (d.error) { a.error = d.error; setSub(d.arm, "failed", "fail"); }
     else if (d.done) {
       a.done = true;
-      a.end = performance.now();
+      setSub(d.arm, "done");
       // Trust the server's count once an arm finishes; same rule as the
       // benchmark, so the page can't drift from the published numbers.
       a.words = typeof d.words === "number" ? d.words : countWords(a.text);
