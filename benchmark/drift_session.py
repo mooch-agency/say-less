@@ -491,6 +491,14 @@ def claude_turn(prompt, style, model, cwd, resume=None, hook_script=None,
     cmd = [
         "claude", "-p", prompt,
         "--settings", json.dumps(settings),
+        # HERMETIC (2026-07-25): only project-scope settings load, so the
+        # operator's ~/.claude/CLAUDE.md (which carries its own verbosity
+        # rules) and user-scope plugins can't contaminate either arm. A named
+        # style must therefore exist in the run cwd: run_session copies it to
+        # <cwd>/.claude/output-styles/. Runs before this date had user scope
+        # loaded in ALL arms equally: relative comparisons hold, but absolute
+        # Default word counts were understated.
+        "--setting-sources", "project",
         "--model", model,
         "--mcp-config", '{"mcpServers":{}}', "--strict-mcp-config",
         "--output-format", "json",
@@ -560,6 +568,27 @@ def _style_body(path):
 
 HOOKS = {"+hook": "say-less-gate.sh", "+scopehook": "say-less-scope.sh"}
 
+# Style files shipped in this repo, resolved by frontmatter name so hermetic
+# runs can copy the right file into the session cwd (see claude_turn).
+_STYLE_DIRS = [os.path.join(HERE, "..", "output-styles"),
+               os.path.join(HERE, "..", "versions")]
+
+
+def _resolve_style_file(name):
+    """Find the repo style file whose frontmatter name: matches `name`."""
+    for d in _STYLE_DIRS:
+        if not os.path.isdir(d):
+            continue
+        for fn in os.listdir(d):
+            if not fn.endswith(".md"):
+                continue
+            path = os.path.join(d, fn)
+            with open(path) as f:
+                head = f.read(400)
+            if f"name: {name}\n" in head:
+                return path
+    return None
+
 
 def run_session(style, model, do_judge, conversation, workspace=None):
     """One full multi-turn conversation under a style. Returns per-turn scores.
@@ -586,6 +615,16 @@ def run_session(style, model, do_judge, conversation, workspace=None):
     # Isolated dir: empty for Q&A shapes (no tool temptation); seeded with the
     # report workspace when the conversation does real edits.
     with tempfile.TemporaryDirectory(prefix="drift_") as cwd:
+        # Hermetic style delivery: claude_turn runs with --setting-sources
+        # project, so a named style must live in THIS cwd to resolve.
+        if real_style != "Default":
+            src = _resolve_style_file(real_style)
+            if src is None:
+                raise ValueError(f"style {real_style!r} not found in repo style dirs")
+            sdir = os.path.join(cwd, ".claude", "output-styles")
+            os.makedirs(sdir, exist_ok=True)
+            with open(src) as f, open(os.path.join(sdir, "style.md"), "w") as g:
+                g.write(f.read())
         if persona:
             with open(os.path.join(cwd, "CLAUDE.md"), "w") as f:
                 f.write(_style_body(STYLE_FILE))

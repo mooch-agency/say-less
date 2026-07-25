@@ -110,6 +110,22 @@ levers. The remaining lever is a **scope budget, stated structurally
 (countable elements, not words), re-injected at recency** — and a report-shaped
 benchmark to measure it.
 
+
+## Hermetic measurement (2026-07-25)
+
+Every run before this date loaded user scope, so the "Default" arm carried the
+operator's `~/.claude/CLAUDE.md` (which contains its own brevity rules). Probe:
+"What is your name?" answered "I am moochbot" without flags, "I am Claude" with
+`--setting-sources project`. `claude_turn` now always passes that flag, and
+styles are copied into each run's own `.claude/output-styles/`.
+
+A 2x2 paired batch (style x CLAUDE.md, 10 prompts, 3 trials, one batch) then
+showed: stock vs Say Less is **55% fewer words**; CLAUDE.md has **no measurable
+effect on Default** (+7.0 words, se 16.6) but genuinely shortens **Say Less**
+by ~3 words (se 1.5). See results/2026-07-hermetic-baseline.md. Practical rule:
+Default's per-prompt spread is huge (paired sd 52), so never judge a baseline
+from a single unpaired run.
+
 ## What not to do
 
 - Rely on one strong opening instruction to persist (it decays).
