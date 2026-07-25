@@ -73,10 +73,12 @@ Then `/config` → Output style → **Say Less**. Coding behavior is unchanged e
 ## Test it yourself
 
 ```bash
-python3 benchmark/spot.py "Say Less"
+python3 benchmark/serve_compare.py     # localhost:8787, type a prompt, watch both stream
+python3 benchmark/compare.py "..."     # same thing, one prompt, in the terminal
+python3 benchmark/spot.py "Say Less"   # 10 fixed prompts with word counts
 ```
 
-Prints 10 replies with word counts. No judges, no scores: read them and decide. Tweak the style file, rerun, compare.
+Both arms run hermetically, so your own `CLAUDE.md` and plugins can't shorten either side. No judges, no scores: read them and decide.
 
 ## Why it's built this way
 
