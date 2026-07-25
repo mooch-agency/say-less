@@ -45,7 +45,7 @@ def gen(style, prompt, model):
 def main():
     ap = argparse.ArgumentParser(description="Cheap spot check: print replies + word counts, judge by eye.")
     ap.add_argument("style", help='Output-style name (frontmatter name:), e.g. "Say Less v3"')
-    ap.add_argument("--model", default="sonnet")
+    ap.add_argument("--model", default="claude-sonnet-5")
     ap.add_argument("-n", type=int, default=len(PROMPTS), help="How many prompts (default all).")
     args = ap.parse_args()
 

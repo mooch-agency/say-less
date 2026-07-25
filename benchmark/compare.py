@@ -44,7 +44,7 @@ def run(prompt, style, model):
 def main():
     ap = argparse.ArgumentParser(description="One prompt, both arms, word counts.")
     ap.add_argument("prompt")
-    ap.add_argument("--model", default="sonnet")
+    ap.add_argument("--model", default="claude-sonnet-5")
     ap.add_argument("--json", action="store_true", help="Emit JSON instead of text.")
     args = ap.parse_args()
 

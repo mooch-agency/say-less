@@ -31,7 +31,7 @@ from drift_session import prose_words, total_words, _resolve_style_file, _env
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STYLE = "Say Less"
-MODEL = "sonnet"
+MODEL = "claude-sonnet-5"
 
 
 def stream_arm(prompt, style, model, out_q, arm):

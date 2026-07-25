@@ -15,7 +15,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const MODEL = process.env.SAY_LESS_MODEL || "claude-opus-4-8";
+const MODEL = process.env.SAY_LESS_MODEL || "claude-sonnet-5";
 const MAX_TOKENS = 1500;            // ceiling per arm; replies are far shorter
 const WORD_CAP = 200;               // prompts are questions, not documents
 const RATE_PER_MIN = 6;             // 2 model calls per request, so half rewrite's
