@@ -189,9 +189,9 @@ const modelEl = document.getElementById("model");
 
 const UI = {
   default: {body: document.getElementById("a"), count: document.getElementById("cA"),
-            sub: document.getElementById("sA"), idle: "Default", name: "Claude Code"},
+            sub: document.getElementById("sA"), name: "Claude Code"},
   sayless: {body: document.getElementById("b"), count: document.getElementById("cB"),
-            sub: document.getElementById("sB"), idle: "Same model, style on", name: "Say Less"}
+            sub: document.getElementById("sB"), name: "Say Less"}
 };
 
 const ex = document.getElementById("examples");
@@ -251,6 +251,12 @@ function idle() {
   go.textContent = "Ask";
   go.classList.remove("stop");
   if (es) { es.close(); es = null; }
+  // A column that never settled must not keep its pulsing dot: the processes
+  // are dead once the stream closes, and a live dot on a dead run is a lie.
+  for (const k of Object.keys(UI)) {
+    if (!arm[k] || arm[k].done || arm[k].error) continue;
+    setSub(k, "stopped");
+  }
 }
 
 function finish() {
