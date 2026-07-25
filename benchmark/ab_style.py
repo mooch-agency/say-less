@@ -110,7 +110,13 @@ def claude(prompt, system, model):
     ]
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}  # force subscription, not API billing
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=env)
+        # stdin=DEVNULL guards CORRECTNESS, not speed. capture_output only
+        # redirects stdout and stderr, so stdin stays inherited, and `claude -p`
+        # reads whatever is there and APPENDS it to the prompt. Harmless from a
+        # terminal, silently rewrites every benchmarked question from a pipe,
+        # heredoc, CI or cron.
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=180,
+                           stdin=subprocess.DEVNULL, env=env)
     except subprocess.TimeoutExpired:
         return ""
     return r.stdout.strip()

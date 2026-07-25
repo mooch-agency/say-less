@@ -475,9 +475,33 @@ def _env():
     return {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
 
 
+def ensure_style(cwd, style):
+    """Materialise a named style into <cwd>/.claude/output-styles/style.md.
+
+    Under --setting-sources project the user-scope styles dir is NOT loaded, so
+    a style that isn't in the run cwd silently resolves to nothing and the turn
+    runs as Default. That failure is invisible: the run still succeeds and still
+    gets labelled with the style name, so it reads as a catastrophic regression
+    (spot.py reported 199 words for Say Less against a true median of ~42).
+    Idempotent, so callers that already seeded the dir can call it again.
+    """
+    if style == "Default":
+        return
+    src = _resolve_style_file(style)
+    if src is None:
+        raise ValueError(f"style {style!r} not found in repo style dirs")
+    sdir = os.path.join(cwd, ".claude", "output-styles")
+    os.makedirs(sdir, exist_ok=True)
+    with open(src) as f, open(os.path.join(sdir, "style.md"), "w") as g:
+        g.write(f.read())
+
+
 def claude_turn(prompt, style, model, cwd, resume=None, hook_script=None,
                 allow_edits=False):
     """One headless turn. Returns (reply_text, session_id)."""
+    # Every caller gets the style guaranteed present, not just the ones that
+    # remember to seed it themselves.
+    ensure_style(cwd, style)
     settings = {"outputStyle": style}
     if allow_edits:
         # Report-shaped sessions do real file edits; -p mode auto-denies
@@ -506,8 +530,17 @@ def claude_turn(prompt, style, model, cwd, resume=None, hook_script=None,
     if resume:
         cmd += ["--resume", resume]
     try:
+        # stdin=DEVNULL guards CORRECTNESS, not speed. capture_output only
+        # redirects stdout and stderr, so stdin stays inherited, and `claude -p`
+        # reads whatever is there and APPENDS it to the prompt. Run from a
+        # terminal that is harmless (a TTY sends nothing). Run from a pipe,
+        # heredoc, CI or cron, the surrounding text is silently glued onto every
+        # question, and the harness measures answers to prompts nobody wrote.
+        # Observed: a heredoc-launched spot.py returned median 237 words against
+        # a true ~42, the replies visibly answering the wrapper script.
         r = subprocess.run(cmd, capture_output=True, text=True,
-                           timeout=420, env=_env(), cwd=cwd)
+                           timeout=420, stdin=subprocess.DEVNULL,
+                           env=_env(), cwd=cwd)
         data = json.loads(r.stdout)
         return data.get("result", ""), data.get("session_id", resume)
     except (subprocess.TimeoutExpired, json.JSONDecodeError, ValueError):
@@ -532,8 +565,12 @@ def claude_plain(prompt, system, model, cwd=None):
             "--output-format", "json",
         ]
         try:
+            # Same trap as claude_turn: inherited stdin gets appended to the
+            # prompt, which here would corrupt the judge's instructions and
+            # silently skew every score.
             r = subprocess.run(cmd, capture_output=True, text=True,
-                               timeout=180, env=_env(), cwd=jcwd)
+                               timeout=180, stdin=subprocess.DEVNULL,
+                               env=_env(), cwd=jcwd)
             return json.loads(r.stdout).get("result", "").strip()
         except (subprocess.TimeoutExpired, json.JSONDecodeError, ValueError):
             return ""
@@ -616,15 +653,9 @@ def run_session(style, model, do_judge, conversation, workspace=None):
     # report workspace when the conversation does real edits.
     with tempfile.TemporaryDirectory(prefix="drift_") as cwd:
         # Hermetic style delivery: claude_turn runs with --setting-sources
-        # project, so a named style must live in THIS cwd to resolve.
-        if real_style != "Default":
-            src = _resolve_style_file(real_style)
-            if src is None:
-                raise ValueError(f"style {real_style!r} not found in repo style dirs")
-            sdir = os.path.join(cwd, ".claude", "output-styles")
-            os.makedirs(sdir, exist_ok=True)
-            with open(src) as f, open(os.path.join(sdir, "style.md"), "w") as g:
-                g.write(f.read())
+        # project, so a named style must live in THIS cwd to resolve. Seeded up
+        # front so a missing style raises here, before any turn is billed.
+        ensure_style(cwd, real_style)
         if persona:
             with open(os.path.join(cwd, "CLAUDE.md"), "w") as f:
                 f.write(_style_body(STYLE_FILE))

@@ -90,9 +90,13 @@ def stream_arm(prompt, style, model, out_q, arm, registry):
         ]
         # stderr goes to a file, not a pipe: nothing reads it during the run, and
         # a full pipe buffer would deadlock the CLI mid-answer.
-        # stdin=DEVNULL is not cosmetic. Left inherited, the CLI spends 3s
-        # waiting to see if anything is being piped in, which measured as ~2.3s
-        # of extra dead air before the first word (4.75s -> 2.45s median).
+        # stdin=DEVNULL does two jobs here. It stops the CLI appending whatever
+        # is on stdin to the prompt (it does, silently). And because a server is
+        # launched with a pipe rather than a TTY, it skips the CLI's 3s "waiting
+        # for stdin" pause: measured live, first words went 6.2s -> 2.2s, and
+        # median time until BOTH arms are streaming went 9.17s -> 3.29s. A run
+        # from an interactive terminal never pays that pause, so the benchmark
+        # harnesses get no speedup from the same flag, only the correctness.
         with open(err_path, "w") as errf:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=errf,
                                     stdin=subprocess.DEVNULL,
