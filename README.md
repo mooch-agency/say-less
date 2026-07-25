@@ -1,10 +1,32 @@
 # Say Less
 
-Claude Code writes too much.
-
-Say Less is a Claude Plugin that cuts word count by up to 86% and on average 63%.
+Claude Code writes too much. Say Less is a Claude Code plugin that cuts word
+count by up to 86%, 63% on average. Reasoning and coding behavior are
+unchanged; only the reply gets shorter.
 
 ![median words per reply: Default 129, Say Less 42](words-per-reply.svg)
+
+**Status: private beta, invite-only.** The repo is private; the install
+commands below only work once you have read access. Ask Tahi.
+
+## Install
+
+Paste this into any Claude Code session:
+
+```
+Install the Say Less plugin: run `claude plugin marketplace add gichigi/say-less` then `claude plugin install say-less@say-less`, then verify with `claude plugin list`. If the marketplace add fails with a clone or auth error, tell me this is an invite-only beta and I need repo access from Tahi first, and check `gh auth status`. Finish by telling me to restart my session and ask any question to see the style.
+```
+
+Or run it yourself:
+
+```bash
+claude plugin marketplace add gichigi/say-less
+claude plugin install say-less@say-less
+```
+
+Active immediately, no config. To turn it off: `claude plugin disable say-less`.
+Access, verification, and troubleshooting: [INSTALL.md](INSTALL.md). Prefer a
+plain output style with no plugin? INSTALL.md has the copy-file version too.
 
 ## Before / after
 
@@ -52,24 +74,6 @@ Same findings, 58% less to read.
 
 Ask it your own question and watch both answers stream: `python3 benchmark/serve_compare.py`.
 
-## Install
-
-```bash
-claude plugin marketplace add gichigi/say-less
-claude plugin install say-less@say-less
-```
-
-Active immediately, no config. To turn it off: `claude plugin disable say-less`.
-
-Prefer a plain output style? Copy the one file instead:
-
-```bash
-git clone https://github.com/gichigi/say-less && cd say-less
-cp output-styles/say-less.md ~/.claude/output-styles/
-```
-
-Then `/config` → Output style → **Say Less**. Coding behavior is unchanged either way; only the reply style changes.
-
 ## Test it yourself
 
 ```bash
@@ -88,6 +92,13 @@ Numbers come from 10 prompts run 3 times per arm, all hermetic (`--setting-sourc
 
 Full findings, with data: [benchmark/RESEARCH.md](benchmark/RESEARCH.md), [benchmark/results/](benchmark/results/).
 
+## Feedback
+
+Hit a reply that stayed too long, or worse, dropped something it should have
+kept? Open an issue with the prompt that caused it. Both failure modes are
+useful to hear about; that's what the beta is for.
+
 ## Status
 
-Dogfooding. The shipped style is `output-styles/say-less.md`; earlier drafts are in `versions/` with their benchmark numbers in `benchmark/results/`.
+The shipped style is `output-styles/say-less.md`; earlier drafts are in
+`versions/` with their benchmark numbers in `benchmark/results/`.

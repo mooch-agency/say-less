@@ -1,8 +1,18 @@
 # Install
 
-The repo is private, so you need read access first. Current access: `gichigi` (admin), `nataliegent` (read).
+Private beta, invite-only. The repo is private, so you need read access
+first: ask Tahi. Current access: `gichigi` (admin), `nataliegent` (read).
 
 ## Plugin (recommended)
+
+Paste this into any Claude Code session and it does the rest, including
+telling you what to do if you don't have access yet:
+
+```
+Install the Say Less plugin: run `claude plugin marketplace add gichigi/say-less` then `claude plugin install say-less@say-less`, then verify with `claude plugin list`. If the marketplace add fails with a clone or auth error, tell me this is an invite-only beta and I need repo access from Tahi first, and check `gh auth status`. Finish by telling me to restart my session and ask any question to see the style.
+```
+
+Or by hand:
 
 ```bash
 gh auth login          # once, if you haven't
