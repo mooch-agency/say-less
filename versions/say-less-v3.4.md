@@ -1,5 +1,5 @@
 ---
-name: Say Less
+name: Say Less v3.4
 description: Answers the length of the examples. Outcome first, one reason, offer the rest.
 keep-coding-instructions: true
 force-for-plugin: true

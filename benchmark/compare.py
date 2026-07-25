@@ -22,7 +22,7 @@ import json
 import os
 import tempfile
 
-from drift_session import claude_turn, prose_words, _resolve_style_file
+from drift_session import claude_turn, prose_words, total_words, _resolve_style_file
 
 STYLE = "Say Less"
 
@@ -50,7 +50,12 @@ def main():
 
     default = run(args.prompt, "Default", args.model)
     sayless = run(args.prompt, STYLE, args.model)
-    dw, sw = prose_words(default), prose_words(sayless)
+    # Total words is the headline: it is the real reading load. Code is
+    # content the reader still has to get through, and stripping it can
+    # score a reply that explains in prose as LONGER than one that dumps a
+    # code block. Prose is kept alongside as a diagnostic.
+    dw, sw = total_words(default), total_words(sayless)
+    dp, sp = prose_words(default), prose_words(sayless)
 
     if args.json:
         print(json.dumps({"prompt": args.prompt, "model": args.model,
@@ -60,8 +65,8 @@ def main():
 
     cut = round((1 - sw / dw) * 100) if dw else 0
     bar = "=" * 72
-    print(f"\n{bar}\nDEFAULT  ({dw} prose words)\n{bar}\n{default.strip()}")
-    print(f"\n{bar}\nSAY LESS  ({sw} prose words)\n{bar}\n{sayless.strip()}")
+    print(f"\n{bar}\nDEFAULT  ({dw} words, {dp} excl. code)\n{bar}\n{default.strip()}")
+    print(f"\n{bar}\nSAY LESS  ({sw} words, {sp} excl. code)\n{bar}\n{sayless.strip()}")
     print(f"\n{bar}")
     if dw and sw:
         word = "shorter" if cut >= 0 else "longer"

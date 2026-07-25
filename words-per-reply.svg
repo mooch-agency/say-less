@@ -7,12 +7,12 @@
       .label { fill: #ccc; } .num { fill: #fff; } .title { fill: #aaa; }
     }
   </style>
-  <text x="20" y="28" class="title">median prose words per reply · 10 prompts x 3 runs · sonnet</text>
+  <text x="20" y="28" class="title">median words per reply · 10 prompts x 3 runs · sonnet</text>
   <text x="20" y="70" class="label">Default</text>
-  <rect x="130" y="52" width="420" height="26" rx="4" fill="#c9553e"/>
-  <text x="560" y="70" class="num">70</text>
+  <rect x="130" y="52" width="440" height="26" rx="4" fill="#c9553e"/>
+  <text x="580" y="70" class="num">129</text>
   <text x="20" y="118" class="label">Say Less</text>
-  <rect x="130" y="100" width="186" height="26" rx="4" fill="#3e8e5a"/>
-  <text x="326" y="118" class="num">31</text>
-  <text x="130" y="160" class="title">55% fewer words overall. benchmark/spot.py, judge it yourself.</text>
+  <rect x="130" y="100" width="143" height="26" rx="4" fill="#3e8e5a"/>
+  <text x="283" y="118" class="num">42</text>
+  <text x="130" y="160" class="title">63% fewer words. Shorter on all 10 prompts, by 41% to 86%.</text>
 </svg>

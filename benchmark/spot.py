@@ -18,7 +18,7 @@ import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 
-from drift_session import claude_turn, prose_words
+from drift_session import claude_turn, prose_words, total_words
 
 # 10 prompts shaped like a real Claude Code session: facts, decisions, pasted
 # code/traces, a review, an explain. Held out from every style's examples.
@@ -55,14 +55,15 @@ def main():
 
     words = []
     for q, a in zip(prompts, replies):
-        w = prose_words(a)
+        w = total_words(a)  # headline metric: code counts as reading load
+        pw = prose_words(a)
         words.append(w)
         print("=" * 72)
         print(f"Q: {q.splitlines()[0]}")
-        print(f"A ({w} prose words):\n{a.strip() or '<EMPTY>'}\n")
+        print(f"A ({w} words, {pw} excl. code):\n{a.strip() or '<EMPTY>'}\n")
     print("=" * 72)
     print(f"{args.style} on {args.model}: median {sorted(words)[len(words)//2]} words, "
-          f"range {min(words)}-{max(words)}. Target: example-length (roughly 5-40).")
+          f"range {min(words)}-{max(words)}. Words include code.")
 
 
 if __name__ == "__main__":

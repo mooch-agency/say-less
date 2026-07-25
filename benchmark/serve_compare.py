@@ -73,7 +73,7 @@ def stream_arm(prompt, style, model, out_q, arm):
         proc.wait()
         text = "".join(full)
         out_q.put({"arm": arm, "done": True, "text": text,
-                   "words": prose_words(text), "total": total_words(text)})
+                   "words": total_words(text), "prose": prose_words(text)})
     except Exception as exc:  # surfaced in the UI rather than dying silently
         out_q.put({"arm": arm, "error": str(exc)})
     finally:
@@ -140,13 +140,11 @@ const A=document.getElementById("a"),B=document.getElementById("b");
 const nA=document.getElementById("nA"),nB=document.getElementById("nB"),delta=document.getElementById("delta");
 fetch("/model").then(r=>r.text()).then(t=>document.getElementById("m").textContent=t);
 
-// same rule as benchmark/drift_session.py prose_words
-function proseWords(t){t=String(t||"");t=t.replace(/```[\s\S]*?```/g," ");
- t=t.replace(/!\[[^\]]*\]\([^)]*\)/g," ");t=t.replace(/\[([^\]]*)\]\([^)]*\)/g,"$1");
- t=t.replace(/`[^`]*`/g," ");return t.split(/\s+/).filter(x=>/[0-9A-Za-z]/.test(x)).length;}
+// headline = every word incl. code (real reading load); matches total_words()
+function totalWords(t){return String(t||"").split(/\s+/).filter(x=>/[0-9A-Za-z]/.test(x)).length;}
 const buf={default:"",sayless:""};
-function paint(){nA.innerHTML=proseWords(buf.default)+"<small>words</small>";
- nB.innerHTML=proseWords(buf.sayless)+"<small>words</small>";}
+function paint(){nA.innerHTML=totalWords(buf.default)+"<small>words</small>";
+ nB.innerHTML=totalWords(buf.sayless)+"<small>words</small>";}
 
 f.addEventListener("submit",ev=>{
   ev.preventDefault();

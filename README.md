@@ -2,9 +2,9 @@
 
 Claude Code writes too much.
 
-Say Less is a Claude Plugin that cuts word count by up to 86% and on average 55%.
+Say Less is a Claude Plugin that cuts word count by up to 86% and on average 63%.
 
-![median words per reply: Default 70, Say Less 31](words-per-reply.svg)
+![median words per reply: Default 129, Say Less 42](words-per-reply.svg)
 
 ## Before / after
 
@@ -84,7 +84,7 @@ Both arms run hermetically, so your own `CLAUDE.md` and plugins can't shorten ei
 
 Examples set the length; rules alone don't. One soft length bound is load-bearing (remove it and replies creep back up). Prescribing report structure backfires. On Opus, verbosity drifts back over long sessions unless re-injected (optional hook: `benchmark/hooks/`).
 
-Numbers come from 10 prompts run 3 times per arm, all hermetic (`--setting-sources project`), so a personal `CLAUDE.md` can't quietly shorten either side. Word counts are prose only, computed by `prose_words`, never by a model. Say Less doesn't win every prompt: on one-line factual answers it's occasionally a word or two longer.
+Numbers come from 10 prompts run 3 times per arm, all hermetic (`--setting-sources project`), so a personal `CLAUDE.md` or an installed plugin can't quietly shorten either side. Say Less was shorter on all 10, by 41% to 86%. Counts include code, because code is still reading: stripping it scored Say Less as *longer* on the Docker prompt while it actually produced half the reading. Computed by `total_words`, never by a model.
 
 Full findings, with data: [benchmark/RESEARCH.md](benchmark/RESEARCH.md), [benchmark/results/](benchmark/results/).
 
