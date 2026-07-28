@@ -1,6 +1,6 @@
 # Install
 
-Two ways in. Both take about a minute and neither needs an account.
+Two ways in: the plugin, which updates itself, or the style file on its own.
 
 ## Plugin (recommended)
 

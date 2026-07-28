@@ -25,7 +25,7 @@ claude plugin install say-less@say-less
 ```
 
 Active immediately, no config. To turn it off: `claude plugin disable say-less`.
-Access, verification, and troubleshooting: [INSTALL.md](INSTALL.md). Prefer a
+Verification and troubleshooting: [INSTALL.md](INSTALL.md). Prefer a
 plain output style with no plugin? INSTALL.md has the copy-file version too.
 
 ## Before / after

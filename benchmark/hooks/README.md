@@ -41,9 +41,20 @@ can't reach.
 
 ## Install
 
-**Per project (safe, fires only in this repo):** already wired via
-`.claude/settings.json` at the repo root — nothing to do when running `claude`
-here.
+**Per project (safe, fires only in this repo):** add this to
+`.claude/settings.json` at the repo root. That file is gitignored, so it isn't
+shipped and you have to create it yourself:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command",
+        "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/benchmark/hooks/say-less-gate.sh\"", "timeout": 5 } ] }
+    ]
+  }
+}
+```
 
 **Globally (fires in every session, every project):** copy the script somewhere
 stable and add the hook to `~/.claude/settings.json`:
