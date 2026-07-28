@@ -11,9 +11,9 @@ Try it on real work and tell me where it falls short.
 
 ## See the difference
 
-Same question, same model. Both arms run hermetically, so no personal
-`CLAUDE.md` or installed plugin can shorten either side. The style is the only
-variable.
+Same question, same model. Both sides start from a clean slate, so no personal
+`CLAUDE.md` or installed plugin can shorten either one. The style is the only
+difference.
 
 > **Q: What's the difference between Git and GitHub?**
 
@@ -74,15 +74,39 @@ python3 benchmark/compare.py "..."     # same thing, one prompt, in the terminal
 python3 benchmark/spot.py "Say Less"   # 10 fixed prompts with word counts
 ```
 
-Both arms run hermetically, so your own `CLAUDE.md` and plugins can't shorten either side. No judges, no scores: read them and decide.
+Both sides start from a clean slate, so your own `CLAUDE.md` and plugins can't shorten either one. No judges, no scores: read them and decide.
 
 ## Why it's built this way
 
-Examples set the length; rules alone don't. One soft length bound is load-bearing (remove it and replies creep back up). Prescribing report structure backfires. On Opus, verbosity drifts back over long sessions unless re-injected (optional hook: `benchmark/hooks/`).
+Telling a model to be concise barely works. Showing it short answers does, so
+the style file is mostly examples, and replies come out the length of those
+examples.
 
-Numbers come from 10 prompts run 3 times per arm, all hermetic (`--setting-sources project`), so a personal `CLAUDE.md` or an installed plugin can't quietly shorten either side. Say Less was shorter on all 10, by 61% to 80%. Counts include code, because code is still reading: stripping it scored Say Less as *longer* on the Docker prompt while it actually produced half the reading. Computed by `total_words`, never by a model.
+Three things that turned out to matter:
 
-Full findings, with data: [benchmark/RESEARCH.md](benchmark/RESEARCH.md), [benchmark/results/](benchmark/results/). Reproduce the headline number: `python3 benchmark/paired.py`.
+- **One line carries the bound**: "the whole reply is 1-4 lines". Take that
+  line out and replies grow straight back.
+- **Naming sections makes replies longer, not shorter.** So the style says
+  nothing about how to structure an answer.
+- **On Opus, replies drift back toward normal length as a session runs on.**
+  Repeating the rule at every turn fixes it, which is what the optional hook in
+  [`benchmark/hooks/`](benchmark/hooks/) does. It ships off by default.
+
+## How the numbers were measured
+
+10 questions, asked 3 times each, to a plain Claude Code and to one running Say
+Less. Every run starts from a clean slate (`--setting-sources project`): no
+personal `CLAUDE.md`, no settings, no other plugins, so nothing outside the
+style can shorten either answer.
+
+Say Less was shorter on all 10, by 61% to 80%. A script does the counting
+(`total_words`); no model grades the result. Code blocks count as words,
+because you still have to read them: ignoring code once scored Say Less as
+*longer* on a Docker question when it had in fact produced half the reading.
+
+Full findings, with data: [benchmark/RESEARCH.md](benchmark/RESEARCH.md),
+[benchmark/results/](benchmark/results/). Reproduce the headline number:
+`python3 benchmark/paired.py`.
 
 ## Feedback
 
