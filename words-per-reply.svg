@@ -1,18 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" width="640" height="300" role="img" aria-label="Median words per reply: Claude Code 171, Claude Code with Say Less 50. 71% fewer words.">
+  <!-- Styled to match mooch.agency/say-less: dark chassis, serif readouts,
+       mono uppercase labels, and the same 4px length gauge the live demo
+       uses. The Say Less bar is the bright one, because it is the product.
+       Regenerate the numbers from benchmark/paired.py, never by hand. -->
   <style>
-    .label { font-size: 14px; fill: #444; }
-    .num { font-size: 15px; font-weight: 700; fill: #111; }
-    .title { font-size: 13px; fill: #767676; }
-    @media (prefers-color-scheme: dark) {
-      .label { fill: #ccc; } .num { fill: #fff; } .title { fill: #aaa; }
-    }
+    .card  { fill: #000; }
+    .rule  { stroke: #2a2a2c; stroke-width: 1; }
+    .cap   { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+             font-size: 9.5px; letter-spacing: 1.5px; fill: #a8a8ad; }
+    .label { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+             font-size: 10px; letter-spacing: 1.6px; fill: #8e8e93; }
+    .num   { font-family: 'Instrument Serif', 'Times New Roman', Times, serif;
+             font-size: 34px; fill: #f5f5f7; font-feature-settings: "tnum"; }
+    .unit  { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+             font-size: 10px; letter-spacing: 1.4px; fill: #8e8e93; }
+    .track { fill: #2a2a2c; }
+    .fill-default { fill: #8e8e93; }
+    .fill-sayless { fill: #ffffff; }
   </style>
-  <text x="20" y="28" class="title">median words per reply · 10 prompts x 3 runs · sonnet</text>
-  <text x="20" y="70" class="label">Default</text>
-  <rect x="130" y="52" width="440" height="26" rx="4" fill="#c9553e"/>
-  <text x="580" y="70" class="num">171</text>
-  <text x="20" y="118" class="label">Say Less</text>
-  <rect x="130" y="100" width="129" height="26" rx="4" fill="#3e8e5a"/>
-  <text x="269" y="118" class="num">50</text>
-  <text x="130" y="160" class="title">71% fewer words. Shorter on all 10 prompts, by 61% to 80%.</text>
+
+  <rect class="card" x="0" y="0" width="640" height="300" rx="14"/>
+
+  <text class="cap" x="32" y="42">MEDIAN WORDS PER REPLY &#183; 10 PROMPTS &#215; 3 RUNS &#183; SONNET</text>
+  <line class="rule" x1="32" y1="58" x2="608" y2="58"/>
+
+  <!-- Claude Code: the reference reading, so its gauge is full width -->
+  <text class="label" x="32" y="94">CLAUDE CODE</text>
+  <text class="num" x="32" y="136">171<tspan class="unit" dx="9">WORDS</tspan></text>
+  <rect class="track" x="230" y="122" width="378" height="4" rx="2"/>
+  <rect class="fill-default" x="230" y="122" width="378" height="4" rx="2"/>
+
+  <line class="rule" x1="32" y1="164" x2="608" y2="164"/>
+
+  <!-- Say Less: same scale as above, so bar length is a true reading -->
+  <text class="label" x="32" y="200">CLAUDE CODE WITH SAY LESS</text>
+  <text class="num" x="32" y="242">50<tspan class="unit" dx="9">WORDS</tspan></text>
+  <rect class="track" x="230" y="228" width="378" height="4" rx="2"/>
+  <rect class="fill-sayless" x="230" y="228" width="111" height="4" rx="2"/>
+
+  <line class="rule" x1="32" y1="262" x2="608" y2="262"/>
+  <text class="cap" x="32" y="284">71% FEWER WORDS &#183; SHORTER ON ALL 10 PROMPTS, BY 61% TO 80%</text>
 </svg>

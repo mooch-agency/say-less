@@ -2,6 +2,10 @@ __pycache__/
 *.pyc
 .DS_Store
 
+# local dogfood config: pins an output style and points at machine-local
+# paths, so cloning it would silently apply the style to someone else's repo
+.claude/
+
 # local experiment captures, not for publishing
 benchmark/local/
 

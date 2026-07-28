@@ -1,12 +1,12 @@
 {
   "name": "say-less",
-  "version": "0.3.0",
-  "description": "Cuts Claude Code's word count by 71% on average. Outcome first, at a length you'll actually read. Full reasoning is unchanged; only the reply shortens.",
+  "version": "0.4.0",
+  "description": "Cuts Claude Code's word count by a median 71%. Outcome first, at a length you'll actually read. Full reasoning is unchanged; only the reply shortens.",
   "author": {
     "name": "Tahi Gichigi"
   },
-  "homepage": "https://github.com/gichigi/say-less",
-  "repository": "https://github.com/gichigi/say-less",
+  "homepage": "https://github.com/mooch-agency/say-less",
+  "repository": "https://github.com/mooch-agency/say-less",
   "license": "MIT",
   "keywords": [
     "output-style",

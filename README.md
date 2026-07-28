@@ -1,26 +1,26 @@
 # Say Less
 
 Claude Code writes too much. Say Less is a Claude Code plugin that cuts word
-count by up to 80%, 71% on average. Reasoning and coding behavior are
-unchanged; only the reply gets shorter.
+count by a median 71%, up to 80%. Reasoning and coding behavior are unchanged;
+only the reply gets shorter.
 
-![median words per reply: Default 171, Say Less 50](words-per-reply.svg)
+![median words per reply: Claude Code 171, Claude Code with Say Less 50](words-per-reply.svg)
 
-**Status: private beta, invite-only.** The repo is private; the install
-commands below only work once you have read access. Ask Tahi.
+**Status: beta.** It works and it's measured, but the style is still moving.
+Try it on real work and tell me where it falls short.
 
 ## Install
 
 Paste this into any Claude Code session:
 
 ```
-Install the Say Less plugin: run `claude plugin marketplace add gichigi/say-less` then `claude plugin install say-less@say-less`, then verify with `claude plugin list`. If the marketplace add fails with a clone or auth error, tell me this is an invite-only beta and I need repo access from Tahi first, and check `gh auth status`. Finish by telling me to restart my session and ask any question to see the style.
+Install the Say Less plugin: run `claude plugin marketplace add mooch-agency/say-less` then `claude plugin install say-less@say-less`, then verify with `claude plugin list`. Finish by telling me to restart my session and ask any question to see the style.
 ```
 
 Or run it yourself:
 
 ```bash
-claude plugin marketplace add gichigi/say-less
+claude plugin marketplace add mooch-agency/say-less
 claude plugin install say-less@say-less
 ```
 
