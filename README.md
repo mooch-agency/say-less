@@ -99,7 +99,7 @@ Less. Every run starts from a clean slate (`--setting-sources project`): no
 personal `CLAUDE.md`, no settings, no other plugins, so nothing outside the
 style can shorten either answer.
 
-Say Less was shorter on all 10, by 61% to 80%. A script does the counting
+**Say Less was shorter on all 10, by 61% to 80%.** A script does the counting
 (`total_words`); no model grades the result. Code blocks count as words,
 because you still have to read them: ignoring code once scored Say Less as
 *longer* on a Docker question when it had in fact produced half the reading.
