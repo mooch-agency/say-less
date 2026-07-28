@@ -9,6 +9,44 @@ only the reply gets shorter.
 **Status: beta.** It works and it's measured, but the style is still moving.
 Try it on real work and tell me where it falls short.
 
+## See the difference
+
+Same question, same model. Both arms run hermetically, so no personal
+`CLAUDE.md` or installed plugin can shorten either side. The style is the only
+variable.
+
+> **Q: What's the difference between Git and GitHub?**
+
+<table>
+<tr>
+<th align="left" width="50%">Claude Code &middot; 122 words</th>
+<th align="left" width="50%">Claude Code with Say Less &middot; 56 words</th>
+</tr>
+<tr>
+<td valign="top">
+
+Git and GitHub serve different purposes:
+
+**Git** is a version control system &mdash; a command-line tool (or library) that tracks changes to files over time, lets you branch, merge, and revert code. It runs locally on your machine and doesn't require the internet or any company's servers.
+
+**GitHub** is a cloud hosting platform built around Git. It stores your Git repositories remotely and adds collaboration features on top: pull requests, issue tracking, code review, CI/CD, project boards, etc.
+
+Analogy: Git is like the concept of "saving drafts and tracking edits" of a document; GitHub is like Google Drive &mdash; a place to host those files online and collaborate with others. Alternatives to GitHub include GitLab and Bitbucket, which also use Git under the hood.
+
+</td>
+<td valign="top">
+
+Git is a version control tool: it tracks changes to files locally on your machine (commits, branches, history).
+
+GitHub is a hosting service built around Git: it stores your Git repos in the cloud and adds collaboration features (pull requests, issues, code review, CI). You could use Git without ever touching GitHub (or use GitLab/Bitbucket instead).
+
+</td>
+</tr>
+</table>
+
+Same answer, 54% less to read. Ask it your own question and watch both stream:
+`python3 benchmark/serve_compare.py`.
+
 ## Install
 
 Paste this into any Claude Code session:
@@ -27,52 +65,6 @@ claude plugin install say-less@say-less
 Active immediately, no config. To turn it off: `claude plugin disable say-less`.
 Verification and troubleshooting: [INSTALL.md](INSTALL.md). Prefer a
 plain output style with no plugin? INSTALL.md has the copy-file version too.
-
-## Before / after
-
-Same prompt, same model, real benchmark output. The Default side is stock Claude Code with no user settings or memory files loaded.
-
-> **Q: This SQL is slow on 10M rows:** `SELECT * FROM events WHERE DATE(created_at) = '2026-07-01';`
-
-<table>
-<tr>
-<td width="50%" valign="top">
-<b>Default</b> (98 words)
-<blockquote>
-The problem is <code>DATE(created_at)</code>, wrapping a column in a function prevents the database from using an index on <code>created_at</code>.
-<p><b>Fix: use a range instead</b></p>
-<pre><code>SELECT * FROM events
-WHERE created_at &gt;= '2026-07-01'
-  AND created_at &lt;  '2026-07-02';
-</code></pre>
-<p>This is <b>sargable</b>, the index on <code>created_at</code> can be used directly.</p>
-<p><b>Why it's faster:</b></p>
-<ul>
-<li>Original: evaluates <code>DATE()</code> on every row (full table scan even with an index)</li>
-<li>Fixed: the optimizer can do an index range scan and skip irrelevant rows entirely</li>
-</ul>
-<p><b>Also make sure you have the index:</b></p>
-<pre><code>CREATE INDEX idx_events_created_at ON events (created_at);
-</code></pre>
-<p>If you're selecting all columns (<code>SELECT *</code>) on 10M rows, also consider whether you need all columns, projecting only the columns you need reduces I/O significantly, especially if the table is wide.</p>
-</blockquote>
-</td>
-<td width="50%" valign="top">
-<b>Say Less</b> (41 words)
-<blockquote>
-<code>DATE(created_at)</code> wraps the column in a function, making any index on <code>created_at</code> unusable. Use a range instead:
-<pre><code>SELECT * FROM events
-WHERE created_at &gt;= '2026-07-01' AND created_at &lt; '2026-07-02';
-</code></pre>
-<p>Then ensure you have an index on <code>created_at</code>. Also drop the <code>*</code> and select only the columns you need, returning 10M-row-wide results is expensive regardless of the scan.</p>
-</blockquote>
-</td>
-</tr>
-</table>
-
-Same findings, 58% less to read.
-
-Ask it your own question and watch both answers stream: `python3 benchmark/serve_compare.py`.
 
 ## Test it yourself
 
