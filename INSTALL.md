@@ -6,7 +6,11 @@ The quickest route is to let Claude do it. Paste this into any Claude Code
 session and it works out where it's running:
 
 ```
-Install the Say Less plugin from mooch-agency/say-less. Use /plugin if it's available; if not, add it to .claude/settings.json. Tell me to restart when it's done.
+Install the Say Less plugin from mooch-agency/say-less.
+
+Use /plugin if it's available; if not, add it to .claude/settings.json.
+
+Tell me to restart when it's done.
 ```
 
 To do it by hand, pick the section for where you run Claude Code. If you're
