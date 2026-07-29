@@ -49,8 +49,14 @@ Same answer, 54% less to read. Ask it your own question and watch both stream:
 
 ## Install
 
-**In the terminal or the desktop app**, run these two inside a Claude Code
-session:
+Paste this into any Claude Code session and it works out where it's running:
+
+```
+Install the Say Less plugin from mooch-agency/say-less. Use /plugin if it's available; if not, add it to .claude/settings.json. Tell me to restart when it's done.
+```
+
+Or do it yourself. **In the terminal or the desktop app**, run these two inside
+a Claude Code session:
 
 ```
 /plugin marketplace add mooch-agency/say-less

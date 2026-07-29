@@ -2,8 +2,15 @@
 
 Two ways in: the plugin, which updates itself, or the style file on its own.
 
-Pick the section for where you run Claude Code. If you're setting this up for a
-team, or you use more than one of these, skip to
+The quickest route is to let Claude do it. Paste this into any Claude Code
+session and it works out where it's running:
+
+```
+Install the Say Less plugin from mooch-agency/say-less. Use /plugin if it's available; if not, add it to .claude/settings.json. Tell me to restart when it's done.
+```
+
+To do it by hand, pick the section for where you run Claude Code. If you're
+setting this up for a team, or you use more than one of these, skip to
 [Any surface, committed to the repo](#any-surface-committed-to-the-repo).
 
 ## Terminal
