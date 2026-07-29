@@ -49,22 +49,49 @@ Same answer, 54% less to read. Ask it your own question and watch both stream:
 
 ## Install
 
-Paste this into any Claude Code session:
+Paste this into any Claude Code session and it works out where it's running:
 
 ```
-Install the Say Less plugin: run `claude plugin marketplace add mooch-agency/say-less` then `claude plugin install say-less@say-less`, then verify with `claude plugin list`. Finish by telling me to restart my session and ask any question to see the style.
+Install the Say Less plugin from mooch-agency/say-less.
+
+Use /plugin if it's available; if not, add it to .claude/settings.json.
+
+Tell me to restart when it's done.
 ```
 
-Or run it yourself:
+Or do it yourself. **In the terminal or the desktop app**, run these two inside
+a Claude Code session:
 
-```bash
-claude plugin marketplace add mooch-agency/say-less
-claude plugin install say-less@say-less
+```
+/plugin marketplace add mooch-agency/say-less
 ```
 
-Active immediately, no config. To turn it off: `claude plugin disable say-less`.
-Verification and troubleshooting: [INSTALL.md](INSTALL.md). Prefer a
-plain output style with no plugin? INSTALL.md has the copy-file version too.
+```
+/plugin install say-less@say-less
+```
+
+Then restart the session. That's it, no config.
+
+**On the web** ([claude.ai/code](https://claude.ai/code)), `/plugin` isn't
+available, so commit this to `.claude/settings.json` in your repo instead:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "say-less": {
+      "source": { "source": "github", "repo": "mooch-agency/say-less" }
+    }
+  },
+  "enabledPlugins": { "say-less@say-less": true }
+}
+```
+
+Every cloud session on that repo picks it up. Works in the terminal and desktop
+app too, and it's the one to use if you want a whole team on it.
+
+To turn it off: `/plugin disable say-less`. Per-surface detail, the shell
+equivalents, and troubleshooting are in [INSTALL.md](INSTALL.md) &mdash;
+including the plain output-style version with no plugin at all.
 
 ## Test it yourself
 
