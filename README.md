@@ -56,7 +56,7 @@ Install the Say Less plugin from mooch-agency/say-less.
 
 Use /plugin if it's available; if not, add it to .claude/settings.json.
 
-Tell me to restart when it's done.
+When it's done, run `/reload-plugins`, then ask what the default Postgres port is. Say Less answers "5432."; the default answer is a full paragraph.
 ```
 
 Or do it yourself. **In the terminal or the desktop app**, run these two inside
