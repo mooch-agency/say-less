@@ -1,7 +1,7 @@
 {
   "name": "say-less",
   "version": "0.4.0",
-  "description": "Cuts Claude Code's word count by a median 71%. Outcome first, at a length you'll actually read. Full reasoning is unchanged; only the reply shortens.",
+  "description": "Cuts Claude Code's fluff by a median 71%. Outcome first, at a length you'll actually read. Full reasoning is unchanged; only the reply shortens.",
   "author": {
     "name": "Tahi Gichigi"
   },

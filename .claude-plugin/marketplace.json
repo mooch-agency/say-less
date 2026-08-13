@@ -1,12 +1,12 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "say-less",
-  "description": "Say Less: terse Claude Code replies, benchmarked.",
+  "description": "Say Less: cuts Claude Code fluff, benchmarked.",
   "owner": { "name": "Tahi Gichigi" },
   "plugins": [
     {
       "name": "say-less",
-      "description": "Cuts word count by a median 71%, up to 80%. Outcome first, detail on request.",
+      "description": "Cuts the fluff by a median 71%, up to 80%. Outcome first, detail on request.",
       "source": "./",
       "category": "productivity"
     }

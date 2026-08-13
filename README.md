@@ -1,7 +1,7 @@
 # Say Less
 
-Claude Code writes too much. Say Less is a Claude Code plugin that cuts word
-count by a median 71%, up to 80%. Reasoning and coding behavior are unchanged;
+Claude Code writes too much. Say Less is a Claude Code plugin that cuts the
+fluff by a median 71%, up to 80%. Reasoning and coding behavior are unchanged;
 only the reply gets shorter.
 
 ![median words per reply: Claude Code 171, Claude Code with Say Less 50](words-per-reply.svg)
