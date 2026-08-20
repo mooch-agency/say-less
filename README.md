@@ -53,7 +53,7 @@ Paste this into any Claude Code session, terminal or desktop, and it works
 out the rest:
 
 ```
-Install the Say Less plugin — follow the install instructions in AGENTS.md at github.com/mooch-agency/say-less.
+Install the Say Less plugin from mooch-agency/say-less: run the CLI commands in AGENTS.md if you can, otherwise merge install.json from that repo into ~/.claude/settings.json. See github.com/mooch-agency/say-less/blob/master/AGENTS.md for the exact steps.
 ```
 
 **Manual install (terminal only).** Run these two inside a Claude Code

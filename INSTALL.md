@@ -6,12 +6,13 @@ The quickest route is to let Claude do it. Paste this into any Claude Code
 session, terminal or desktop, and it works out the rest:
 
 ```
-Install the Say Less plugin — follow the install instructions in AGENTS.md at github.com/mooch-agency/say-less.
+Install the Say Less plugin from mooch-agency/say-less: run the CLI commands in AGENTS.md if you can, otherwise merge install.json from that repo into ~/.claude/settings.json. See github.com/mooch-agency/say-less/blob/master/AGENTS.md for the exact steps.
 ```
 
-That points the agent at [AGENTS.md](AGENTS.md), which has the full fallback
-chain: the CLI first, a merge into `~/.claude/settings.json` from
-[`install.json`](install.json) if `claude` isn't on PATH, then verification.
+The prompt names the actions itself (CLI first, else merge
+[`install.json`](install.json)) and uses [AGENTS.md](AGENTS.md) only for the
+exact steps, so an agent doesn't have to trust and execute a remote file
+blind, and a fix to AGENTS.md reaches every previously shared prompt.
 
 To do it by hand, pick the section for where you run Claude Code. If you're
 setting this up for a team, or you use more than one of these, skip to
