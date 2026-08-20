@@ -10,7 +10,7 @@ Install the Say Less plugin from mooch-agency/say-less.
 
 Use /plugin if it's available; if not, add it to .claude/settings.json.
 
-When it's done, tell me to run `/reload-plugins`, then test by asking "What's the default Postgres port?"
+When it's done, tell me to start a new session, then test by asking "What's the default Postgres port?"
 ```
 
 To do it by hand, pick the section for where you run Claude Code. If you're
@@ -29,7 +29,7 @@ Inside a Claude Code session, run:
 /plugin install say-less@say-less
 ```
 
-Restart the session, or run `/reload-plugins` to skip the restart.
+Then start a new session.
 
 Prefer the shell, or scripting it? Same thing from a prompt, no session needed:
 
@@ -40,24 +40,16 @@ claude plugin install say-less@say-less
 
 ## Desktop app
 
-Same two commands as the terminal, run inside a Code session:
-
-```
-/plugin marketplace add mooch-agency/say-less
-```
-
-```
-/plugin install say-less@say-less
-```
-
-If the app tells you `/plugin` isn't available in this environment, use the
-plugin browser in the desktop app, or install the
-[`claude` CLI](#installing-the-cli) and use the shell commands above.
+`/plugin` isn't available as a typed command here &mdash; the two commands
+above only work in the terminal. Use the [paste-and-go prompt](#install)
+at the top of this page instead, or the
+[committed config](#any-surface-committed-to-the-repo) if you're setting
+this up for a whole team.
 
 > **Heads up:** the desktop app does **not** put the `claude` CLI on your PATH.
 > If you paste shell instructions into a desktop session and get
 > `command not found: claude`, that's this &mdash; nothing is broken. Install the
-> CLI, or use `/plugin`.
+> CLI, or use the prompt method.
 
 ## Web
 
@@ -150,8 +142,8 @@ Prints 10 replies with word counts. Median should land around 40-60 words (code 
 ## If it's not working
 
 - `/plugin list` (or `claude plugin list`) should show `say-less@say-less` enabled.
-- Plugins load at session start, so restart your session after installing.
-- `command not found: claude` means you're on a surface without the CLI on PATH, most likely the desktop app. Use `/plugin` instead, or [install the CLI](#installing-the-cli).
+- Plugins load at session start, so start a new session after installing.
+- `command not found: claude` means you're on a surface without the CLI on PATH, most likely the desktop app. Use the [prompt method](#install) instead, or [install the CLI](#installing-the-cli).
 - On the web, a user-scoped install won't persist. Use the [committed config](#any-surface-committed-to-the-repo).
 - If a project sets `"outputStyle"` in its `.claude/settings.json`, that project is pinning a style; the plugin's `force-for-plugin` should still win, but check there first if output looks unchanged.
 - The `claude` CLI authenticates separately from the Claude Desktop app. If `claude -p` says "Not logged in", run `claude auth login` (`/login` only works inside the `claude` REPL, not at a shell prompt).

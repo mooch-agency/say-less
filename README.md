@@ -56,11 +56,11 @@ Install the Say Less plugin from mooch-agency/say-less.
 
 Use /plugin if it's available; if not, add it to .claude/settings.json.
 
-When it's done, tell me to run `/reload-plugins`, then test by asking "What's the default Postgres port?"
+When it's done, tell me to start a new session, then test by asking "What's the default Postgres port?"
 ```
 
-Or do it yourself. **In the terminal or the desktop app**, run these two inside
-a Claude Code session:
+**Manual install (terminal only).** Run these two inside a Claude Code
+session:
 
 ```
 /plugin marketplace add mooch-agency/say-less
@@ -70,10 +70,11 @@ a Claude Code session:
 /plugin install say-less@say-less
 ```
 
-Then restart the session. That's it, no config.
+Then start a new session. That's it, no config.
 
-**On the web** ([claude.ai/code](https://claude.ai/code)), `/plugin` isn't
-available, so commit this to `.claude/settings.json` in your repo instead:
+**On the web** ([claude.ai/code](https://claude.ai/code)) **or the desktop
+app**, `/plugin` isn't available as a typed command, so commit this to
+`.claude/settings.json` in your repo instead:
 
 ```json
 {
@@ -86,8 +87,8 @@ available, so commit this to `.claude/settings.json` in your repo instead:
 }
 ```
 
-Every cloud session on that repo picks it up. Works in the terminal and desktop
-app too, and it's the one to use if you want a whole team on it.
+Every session on that repo picks it up, cloud or local, and it's the one to
+use if you want a whole team on it.
 
 To turn it off: `/plugin disable say-less`. Per-surface detail, the shell
 equivalents, and troubleshooting are in [INSTALL.md](INSTALL.md) &mdash;
