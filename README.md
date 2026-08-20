@@ -49,14 +49,11 @@ Same answer, 54% less to read. Ask it your own question and watch both stream:
 
 ## Install
 
-Paste this into any Claude Code session and it works out where it's running:
+Paste this into any Claude Code session, terminal or desktop, and it works
+out the rest:
 
 ```
-Install the Say Less plugin from mooch-agency/say-less.
-
-Use /plugin if it's available; if not, add it to .claude/settings.json.
-
-When it's done, tell me to start a new session, then test by asking "What's the default Postgres port?"
+Install the Say Less plugin — follow the install instructions in AGENTS.md at github.com/mooch-agency/say-less.
 ```
 
 **Manual install (terminal only).** Run these two inside a Claude Code
@@ -117,8 +114,10 @@ Three things that turned out to matter:
 - **Naming sections makes replies longer, not shorter.** So the style says
   nothing about how to structure an answer.
 - **On Opus, replies drift back toward normal length as a session runs on.**
-  Repeating the rule at every turn fixes it, which is what the optional hook in
-  [`benchmark/hooks/`](benchmark/hooks/) does. It ships off by default.
+  Repeating the rule at every turn fixes it, which is what the
+  [drift hook](hooks/say-less-gate.sh) does &mdash; a short nudge injected
+  once per turn. It ships inside the plugin and is on by default; see
+  [`benchmark/hooks/`](benchmark/hooks/) for how it was measured.
 
 ## How the numbers were measured
 

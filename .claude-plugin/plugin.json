@@ -1,6 +1,6 @@
 {
   "name": "say-less",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Cuts Claude Code's fluff by a median 71%. Outcome first, at a length you'll actually read. Full reasoning is unchanged; only the reply shortens.",
   "author": {
     "name": "Tahi Gichigi"
