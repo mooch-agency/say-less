@@ -110,11 +110,41 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
 
 .install{margin-top:32px;padding-top:20px;border-top:1px solid var(--hairline);
   font-size:14px;color:var(--muted-small);max-width:68ch}
-.install p{margin:0 0 10px}
-.install pre{background:var(--surface);border:1px solid var(--hairline);border-radius:8px;
-  padding:14px 16px;overflow-x:auto;margin:0 0 14px;font-family:var(--mono);font-size:12.5px;
-  line-height:1.6;color:var(--ink);white-space:pre-wrap;word-wrap:break-word}
+.install h2{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3.2vw,34px);
+  line-height:1;letter-spacing:-0.02em;color:var(--black);margin:0 0 10px}
+.install p{margin:0 0 10px;font-size:15px}
 .install a{color:var(--ink)}
+.install code{font-family:var(--mono);font-size:12.5px}
+.install-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0 4px}
+.chev{display:inline-block;font-size:10px;
+  transition:transform var(--t-deliver) var(--ease-deliver)}
+.ghost[aria-expanded="true"] .chev{transform:rotate(180deg)}
+
+/* Labelled block with its own copy control: the head names what the snippet is
+   for, so the prompt and the manual commands can't be mistaken for each other. */
+.codeblock{border:1px solid var(--hairline);border-radius:10px;background:var(--surface);
+  margin:14px 0;overflow:hidden}
+.codeblock-head{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:8px 10px 8px 16px;border-bottom:1px solid var(--hairline);font-family:var(--mono);
+  font-size:10px;text-transform:uppercase;letter-spacing:0.16em;color:var(--muted)}
+.codeblock pre{margin:0;padding:16px;font-family:var(--mono);font-size:12.5px;line-height:1.65;
+  color:var(--ink);white-space:pre-wrap;word-wrap:break-word}
+.copy-btn{font-family:var(--sans);font-size:11px;padding:5px 12px;border-radius:980px;
+  border:1px solid var(--hairline-focus);background:transparent;color:var(--ink);cursor:pointer;
+  transition:border-color var(--t-deliver) var(--ease-deliver)}
+.copy-btn:hover{border-color:var(--ink)}
+.copy-btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.copy-btn.copied{color:var(--muted);border-color:var(--hairline)}
+
+/* Slide-open disclosure: grid-rows animate 0fr to 1fr, visibility drops the
+   closed panel out of the tab order. Most people never need the manual route. */
+.prompt-details{display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;
+  transition:grid-template-rows .4s var(--ease-deliver),opacity .3s var(--ease-deliver),
+    visibility 0s linear .4s}
+.prompt-details.open{grid-template-rows:1fr;opacity:1;visibility:visible;
+  transition:grid-template-rows .4s var(--ease-deliver),
+    opacity .35s var(--ease-deliver) .08s,visibility 0s}
+.prompt-details-inner{overflow:hidden;min-height:0}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 </style>
 </head>
@@ -156,13 +186,42 @@ input[type=text]:focus{outline:none;border-color:var(--ink)}
   </div>
 
   <div class="install">
-    <p class="eyebrow">Install</p>
-    <p>Paste this into any Claude Code session:</p>
-    <pre><code>Install the Say Less plugin: run `claude plugin marketplace add mooch-agency/say-less` then `claude plugin install say-less@say-less`, then verify with `claude plugin list`. When it's done, tell me to run `/reload-plugins`, then test by asking "What's the default Postgres port?"</code></pre>
-    <p>Or run it yourself:</p>
-    <pre><code>claude plugin marketplace add mooch-agency/say-less
-claude plugin install say-less@say-less</code></pre>
-    <p>Repo: <a href="https://github.com/mooch-agency/say-less">github.com/mooch-agency/say-less</a>.</p>
+    <h2>Add to Claude Code</h2>
+    <p>One prompt, same on the terminal and the desktop app. It installs the
+      plugin, the style, and the drift hook together.</p>
+
+    <div class="install-actions">
+      <button class="pill" type="button" data-copy-target="install-prompt">Copy the prompt</button>
+      <button class="ghost" type="button" id="manualToggle" aria-expanded="false" aria-controls="manualDetails">
+        <span class="chev" aria-hidden="true">&#9662;</span> Install it myself
+      </button>
+    </div>
+
+    <div class="codeblock">
+      <div class="codeblock-head">
+        <span>Paste into Claude Code</span>
+        <button class="copy-btn" type="button" data-copy-target="install-prompt">Copy</button>
+      </div>
+      <pre id="install-prompt">Install the Say Less plugin — follow the install instructions in AGENTS.md at github.com/mooch-agency/say-less.</pre>
+    </div>
+
+    <div class="prompt-details" id="manualDetails">
+      <div class="prompt-details-inner">
+        <div class="codeblock">
+          <div class="codeblock-head">
+            <span>Terminal</span>
+            <button class="copy-btn" type="button" data-copy-target="install-commands">Copy</button>
+          </div>
+          <pre id="install-commands">claude plugin marketplace add mooch-agency/say-less
+claude plugin install say-less@say-less</pre>
+        </div>
+        <p>Terminal only. The desktop app doesn't put <code>claude</code> on your
+          PATH, so use the prompt there instead.</p>
+      </div>
+    </div>
+
+    <p>Then start a new session. Repo:
+      <a href="https://github.com/mooch-agency/say-less">github.com/mooch-agency/say-less</a>.</p>
   </div>
 </div>
 
@@ -328,6 +387,43 @@ f.addEventListener("submit", (e) => {
     idle();
     sayError("The stream dropped. Is the server still running?");
   };
+});
+
+// Copy controls target the data attribute, not a class, so the same prompt can
+// be copied from the big pill or from the block's own small button.
+document.querySelectorAll("[data-copy-target]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const target = document.getElementById(btn.dataset.copyTarget);
+    if (!target) return;
+    const flash = label => {
+      const original = btn.textContent;
+      btn.textContent = label;
+      btn.classList.add("copied");
+      setTimeout(() => { btn.textContent = original; btn.classList.remove("copied"); }, 2000);
+    };
+    // navigator.clipboard is absent outside a secure context. Rather than a
+    // button that silently does nothing, select the text so ctrl-c still works.
+    if (!navigator.clipboard) {
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      sel.addRange(range);
+      flash("Press ctrl-c");
+      return;
+    }
+    navigator.clipboard.writeText(target.textContent.trim())
+      .then(() => flash("Copied"))
+      .catch(() => flash("Copy failed"));
+  });
+});
+
+const manualToggle = document.getElementById("manualToggle");
+const manualDetails = document.getElementById("manualDetails");
+manualToggle.addEventListener("click", () => {
+  const open = manualToggle.getAttribute("aria-expanded") === "true";
+  manualToggle.setAttribute("aria-expanded", String(!open));
+  manualDetails.classList.toggle("open", !open);
 });
 </script>
 </body>

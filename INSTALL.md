@@ -3,15 +3,15 @@
 Two ways in: the plugin, which updates itself, or the style file on its own.
 
 The quickest route is to let Claude do it. Paste this into any Claude Code
-session and it works out where it's running:
+session, terminal or desktop, and it works out the rest:
 
 ```
-Install the Say Less plugin from mooch-agency/say-less.
-
-Use /plugin if it's available; if not, add it to .claude/settings.json.
-
-When it's done, tell me to start a new session, then test by asking "What's the default Postgres port?"
+Install the Say Less plugin — follow the install instructions in AGENTS.md at github.com/mooch-agency/say-less.
 ```
+
+That points the agent at [AGENTS.md](AGENTS.md), which has the full fallback
+chain: the CLI first, a merge into `~/.claude/settings.json` from
+[`install.json`](install.json) if `claude` isn't on PATH, then verification.
 
 To do it by hand, pick the section for where you run Claude Code. If you're
 setting this up for a team, or you use more than one of these, skip to

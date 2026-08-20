@@ -1,0 +1,8 @@
+{
+  "extraKnownMarketplaces": {
+    "say-less": {
+      "source": { "source": "github", "repo": "mooch-agency/say-less" }
+    }
+  },
+  "enabledPlugins": { "say-less@say-less": true }
+}

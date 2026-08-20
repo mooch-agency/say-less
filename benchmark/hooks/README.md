@@ -41,46 +41,23 @@ can't reach.
 
 ## Install
 
-**Per project (safe, fires only in this repo):** add this to
-`.claude/settings.json` at the repo root. That file is gitignored, so it isn't
-shipped and you have to create it yourself:
+As of v0.5.0 this hook ships inside the plugin itself, at
+[`hooks/say-less-gate.sh`](../../hooks/say-less-gate.sh), wired up by
+[`hooks/hooks.json`](../../hooks/hooks.json). Installing the Say Less plugin
+(see [INSTALL.md](../../INSTALL.md)) registers it automatically. Nothing to
+configure.
 
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      { "hooks": [ { "type": "command",
-        "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/benchmark/hooks/say-less-gate.sh\"", "timeout": 5 } ] }
-    ]
-  }
-}
-```
+This copy stays here as the reference implementation the benchmark scripts
+below run against, and so the measured-effect writeup can point at a stable
+path. If you're trying to run or reproduce the benchmarks, use this copy; if
+you just want the hook active, install the plugin.
 
-**Globally (fires in every session, every project):** copy the script somewhere
-stable and add the hook to `~/.claude/settings.json`:
-
-```bash
-mkdir -p ~/.claude/hooks
-cp benchmark/hooks/say-less-gate.sh ~/.claude/hooks/
-chmod +x ~/.claude/hooks/say-less-gate.sh
-```
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      { "hooks": [ { "type": "command",
-        "command": "bash \"$HOME/.claude/hooks/say-less-gate.sh\"", "timeout": 5 } ] }
-    ]
-  }
-}
-```
-
-**Caveat for global install:** the hook fires on every turn regardless of the
-active output style, so it nudges toward terseness even when Say Less is not the
-active style. Install globally only if you want terseness as a standing default.
-To scope it to Say Less, keep it per-project, or gate the script on your own
-signal (e.g. an env var you set alongside the style).
+**Caveat:** the hook fires on every turn regardless of the active output
+style, so it nudges toward terseness even when Say Less isn't selected. That's
+the intended default for anyone who installed the plugin at all; if you want
+it scoped to only-when-Say-Less-is-active, gate the script on your own signal
+(e.g. an env var you set alongside the style) and wire it in per-project
+instead of relying on the bundled copy.
 
 ## Test / reproduce
 
